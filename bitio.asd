@@ -16,4 +16,5 @@
   :serial t
   :depends-on (#:fast-io)
   :components ((:file "package")
-               (:file "bitio")))
+               (:file "bitio")
+	       (:file "tests")))
