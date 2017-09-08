@@ -53,14 +53,14 @@
   ((%octet-stream :initarg :octet-stream
                   :initform NIL
                   :reader octet-stream)
-   ;; bit-stable is an unsigned integer that holds unprocessed
+   ;; read-bit-stable is an unsigned integer that holds unprocessed
    ;; bits always in canonical ordering. However, depending on what
    ;; we're doing we might take bits from the MSB side or the LSB
-   ;; side. The bit-stable is an octet worth of bits or less. Though
+   ;; side. The read-bit-stable is an octet worth of bits or less. Though
    ;; this may change in the future.
-   (%bit-stable :initarg :bit-stable
-                :initform 0
-                :accessor bit-stable)
+   (%read-bit-stable :initarg :read-bit-stable
+                     :initform 0
+                     :accessor read-bit-stable)
    ;; How many bits are currently in the stable.
    (%num-bits-in-stable :initarg :num-bits-in-stable
                         :initform 0
@@ -81,22 +81,6 @@ instance the bitio is wrapping."))
   (funcall (%bitio/read-octet bitio)
            (octet-stream bitio)
            eof-error-p eof-value))
-
-;; Axion's old code.
-(defun read-integer (byte-buffer &key (bytes 1) (bit-width 8) (unsignedp t) (endian :be))
-  (let ((value 0))
-    (ecase endian
-      (:be (loop :for i :from (* (1- bytes) bit-width) :downto 0 :by bit-width
-                 :for byte = (fast-io:fast-read-byte byte-buffer)
-                 :do (setf (ldb (byte bit-width i) value) byte)))
-      (:le (loop :for i :below (* bit-width bytes) :by bit-width
-                 :for byte = (fast-io:fast-read-byte byte-buffer)
-                 :do (setf (ldb (byte bit-width i) value) byte))))
-    (if unsignedp
-        value
-        (logior (* (ldb (byte 1 (1- bytes)) value)
-                   (- (expt 2 (* bytes bit-width))))
-                value))))
 
 ;; Assumptions:
 ;; 1) The individual bits of an octet have canonical positions of:
@@ -129,19 +113,19 @@ wasn't (due to an EOF)."
       ;; Oops, had an EOF
       ((equal result eof-value)
        (setf (num-bits-in-stable bitio) 0
-             (bit-stable bitio) 0)
+             (read-bit-stable bitio) 0)
        NIL)
       ;; all good.
       (t
        (setf (num-bits-in-stable bitio) 8
-             (bit-stable bitio) result)
+             (read-bit-stable bitio) result)
        T))))
 
 ;; This is not entirely a fast-path since it doesn't read a sequence.
 (defun fast-path/octet-aligned-bit-read (bitio bit-read-count bit-endian
                                          &optional (eof-error-p T)
                                            (eof-value NIL))
-  "This function assumes the bit-stable is empty in the BITIO stream
+  "This function assumes the read-bit-stable is empty in the BITIO stream
 and BIT-READ-COUNT is a multiple of 8.  It reads BIT-READ-COUNT bits
 from the BITIO stream (reading the actual bits in each octet in
 BIT-ENDIAN manner) and then places them into an integer that it returns.
@@ -183,11 +167,11 @@ position."
 ;; Return two values:
 ;; the value holding the bits in canonical form
 ;; the number of bits read
-(defun consume-bit-stable (bitio bit-read-count bit-endian)
+(defun consume-read-bit-stable (bitio bit-read-count bit-endian)
   (when (zerop (num-bits-in-stable bitio))
-    (return-from consume-bit-stable (values 0 0)))
+    (return-from consume-read-bit-stable (values 0 0)))
 
-  ;; Figure out how many bits to read from the bit-stable
+  ;; Figure out how many bits to read from the read-bit-stable
   (let* ((num-selected-bits (min (num-bits-in-stable bitio)
                                  bit-read-count))
          (bit-start-position (if (eq bit-endian :le)
@@ -197,20 +181,20 @@ position."
          (byte-specification (byte num-selected-bits bit-start-position)))
 
     #++(format t "bs: ~8,'0B, n-s-b: ~A, b-s-p: ~A, b-s: ~A~%"
-               (bit-stable bitio)
+               (read-bit-stable bitio)
                num-selected-bits bit-start-position byte-specification)
 
     (let ((value 0))
       ;; First, we grab the bits we need out of the stable and put them in
       ;; the :le end of the value
-      (setf value (ldb byte-specification (bit-stable bitio)))
+      (setf value (ldb byte-specification (read-bit-stable bitio)))
       ;; Then, depending on bit endian, we clean up the value and bit stable.
       (case bit-endian
         (:le
          ;; Shift the bit stable to the right by the number of bits I collected.
          ;; This gets rid of those bits in the stable.
-         (setf (bit-stable bitio)
-               (ash (bit-stable bitio) (- num-selected-bits)))
+         (setf (read-bit-stable bitio)
+               (ash (read-bit-stable bitio) (- num-selected-bits)))
          ;; Then reverse the bits, cause they are to come out in :le order
          (let ((result (integer-reverse value num-selected-bits)))
            ;; remove the accounting of the bits from the stable.
@@ -219,7 +203,7 @@ position."
 
         (:be
          ;; Zero out the :be stable bits we just took out.
-         (setf (ldb byte-specification (bit-stable bitio))
+         (setf (ldb byte-specification (read-bit-stable bitio))
                0)
          ;; remove the accounting of the bits from the stable.
          (decf (num-bits-in-stable bitio) num-selected-bits)
@@ -236,7 +220,7 @@ position."
     ;; Note: we can only consume up to the amount in the stable, so
     ;; if there is an EOF we cannot detect it here yet.
     (multiple-value-bind (prefix-stable-bits num-prefix-stable-bits-read)
-        (consume-bit-stable bitio bits-remaining-to-read bit-endian)
+        (consume-read-bit-stable bitio bits-remaining-to-read bit-endian)
 
       (decf bits-remaining-to-read num-prefix-stable-bits-read)
 
@@ -311,7 +295,7 @@ position."
           ;; from the stable once it has been filled.
           (multiple-value-bind (suffix-stable-bits
                                 num-suffix-stable-bits-read)
-              (consume-bit-stable bitio bits-remaining-to-read bit-endian)
+              (consume-read-bit-stable bitio bits-remaining-to-read bit-endian)
 
             ;; Now, we have three groups of bits, assemble them into the
             ;; answer we seek.
@@ -382,7 +366,7 @@ there is no notification of this) or the function will return 0."
     (loop :for num-read :from 0
           :for i :from start :below end
           :for the-byte = (bit-read-bits bitio byte-width bit-endian NIL :eof)
-          :do (when (equal :the-byte :eof)
+          :do (when (equal the-byte :eof)
                 (return-from bit-read-sequence num-read))
               (incf num-read)
               (setf (aref seq i) the-byte)))
