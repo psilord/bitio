@@ -95,7 +95,12 @@ instance the bitio is wrapping."))
 ;; [2^N ... 2^3 2^2 2^1 2^0]
 ;; The bit position of the right most bit is 0.
 
+;; EXPORT
 (defun make-bitio (octet-stream bitio/read-octet &rest init-args)
+  "OCTET-STREAM must be a stream that is ready to read/write binary octets
+of (unsigned-byte 8) type. BITIO/READ-OCTET is a function associated with
+the OCTET-STREAM that reads a single octet from the stream. Return an
+instance of a BITIO class."
   (apply #'make-instance 'bitio
          :octet-stream octet-stream
          :bitio/read-octet bitio/read-octet
@@ -349,7 +354,7 @@ EOF-VALUE as in READ-BYTE). The returned value is always unsigned."
 ;; EXPORT
 ;; TODO: Check what happens when short read ends in a partially available byte,
 ;; what is the right action to do in that case?
-(defun bit-read-sequence (bitio seq bit-endian byte-width
+(defun bit-read-bytes (bitio seq bit-endian byte-width
                           &key (start 0) end)
   "This reads UNSIGNED 'bytes' into SEQ given :START and :END keywords.
 THe default span is the entire sequence. BIT-ENDIAN is how the
@@ -357,13 +362,15 @@ individual bits are read from the octet stream, and byte-width is how
 many bits wide a 'byte' is in the stream. Return how many elements
 have been read. The sequence is destructively modified. At EOF
 conditions, a short read will happen for the last element read (and
-there is no notification of this) or the function will return 0."
+there is no notification of this) or the function will return 0.
+NOTE: This function is similar to CL's READ-SEQUENCE except it only will read
+the unsigned byte as defined in the function call arguments."
   (let ((end (if (null end) (length seq) end)))
     (loop :for num-read :from 0
           :for i :from start :below end
           :for the-byte = (bit-read-bits bitio byte-width bit-endian NIL :eof)
           :do (when (equal the-byte :eof)
-                (return-from bit-read-sequence num-read))
+                (return-from bit-read-bytes num-read))
               (incf num-read)
               (setf (aref seq i) the-byte)))
   (length seq))
@@ -405,6 +412,7 @@ there is no notification of this) or the function will return 0."
         (sign-extend value (* num-bytes byte-width)))))
 
 
+;; EXPORT
 (defun bit-octet-read-boundary-p (bitio)
   "Return T if the reading of the bit stream is at an octet boundary.
 NIL otherwise. If at EOF, return T, since techically, it is a boundary."

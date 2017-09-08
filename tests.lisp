@@ -70,10 +70,10 @@
 
 
 ;; Note "byte" doesn't necessarily mean 8 bit octets!
-(defun test-bit-read-sequence (bitio seq bit-endian byte-width
+(defun test-bit-read-bytes (bitio seq bit-endian byte-width
                                expected-seq &key (start 0) end)
 
-  (let ((num-parts-read (bit-read-sequence
+  (let ((num-parts-read (bit-read-bytes
                          bitio seq bit-endian byte-width
                          :start start :end end)))
     (let ((*print-right-margin* 9999))
@@ -273,26 +273,26 @@
 
         ))
 
-    (format t "Case: bit-read-sequence, bit-width 4, bit-endian :be~%")
+    (format t "Case: bit-read-bytes, bit-width 4, bit-endian :be~%")
     (fast-io:with-fast-input (fiobuf octet-vector)
       (let ((bitio (make-bitio fiobuf #'fast-io:fast-read-byte)))
         (let ((seq (make-array (ceiling (/ (length octet-vector) .5))
                                :element-type '(unsigned-byte 4)
                                :initial-element 0)))
 
-          (test-bit-read-sequence bitio seq :be 4
+          (test-bit-read-bytes bitio seq :be 4
                                   #(#x5 #xc #xf #x6 #xe #xe #x7 #x9 #x9 #xa
                                     #xd #xe #xf #xf #xf #x2 #x8 #x8 #x0 #x2)))
         ))
 
-    (format t "Case: bit-read-sequence, bit-width 4, bit-endian :le~%")
+    (format t "Case: bit-read-bytes, bit-width 4, bit-endian :le~%")
     (fast-io:with-fast-input (fiobuf octet-vector)
       (let ((bitio (make-bitio fiobuf #'fast-io:fast-read-byte)))
         (let ((seq (make-array (ceiling (/ (length octet-vector) .5))
                                :element-type '(unsigned-byte 4)
                                :initial-element 0)))
 
-          (test-bit-read-sequence bitio seq :le 4
+          (test-bit-read-bytes bitio seq :le 4
                                   (map 'vector
                                        (lambda (x) (integer-reverse x 4))
                                        #(#xc #x5 #x6 #xf #xe #xe #x9 #x7
@@ -300,51 +300,51 @@
                                          #x8 #x8 #x2 #x0))))
         ))
 
-    (format t "Case: bit-read-sequence, bit-width 8, bit-endian :be~%")
+    (format t "Case: bit-read-bytes, bit-width 8, bit-endian :be~%")
     (fast-io:with-fast-input (fiobuf octet-vector)
       (let ((bitio (make-bitio fiobuf #'fast-io:fast-read-byte)))
         (let ((seq (make-array (ceiling (/ (length octet-vector) 1))
                                :element-type '(unsigned-byte 8)
                                :initial-element 0)))
 
-          (test-bit-read-sequence bitio seq :be 8
+          (test-bit-read-bytes bitio seq :be 8
                                   #(#x5c #xf6 #xee #x79 #x9a
                                     #xde #xff #xf2 #x88 #x02)))
         ))
 
-    (format t "Case: bit-read-sequence, bit-width 8, bit-endian :le~%")
+    (format t "Case: bit-read-bytes, bit-width 8, bit-endian :le~%")
     (fast-io:with-fast-input (fiobuf octet-vector)
       (let ((bitio (make-bitio fiobuf #'fast-io:fast-read-byte)))
         (let ((seq (make-array (ceiling (/ (length octet-vector) 1))
                                :element-type '(unsigned-byte 8)
                                :initial-element 0)))
 
-          (test-bit-read-sequence bitio seq :le 8
+          (test-bit-read-bytes bitio seq :le 8
                                   (map 'vector
                                        (lambda (x) (integer-reverse x 8))
                                        #(#x5c #xf6 #xee #x79 #x9a
                                          #xde #xff #xf2 #x88 #x02))))
         ))
 
-    (format t "Case: bit-read-sequence, bit-width 12, bit-endian :be~%")
+    (format t "Case: bit-read-bytes, bit-width 12, bit-endian :be~%")
     (fast-io:with-fast-input (fiobuf octet-vector)
       (let ((bitio (make-bitio fiobuf #'fast-io:fast-read-byte)))
         (let ((seq (make-array (ceiling (/ (length octet-vector) 1.5))
                                :element-type '(unsigned-byte 12)
                                :initial-element 0)))
 
-          (test-bit-read-sequence bitio seq :be 12
+          (test-bit-read-bytes bitio seq :be 12
                                   #(#x5cf #x6ee #x799 #xade #xfff #x288 #x02)))
         ))
 
-    (format t "Case: bit-read-sequence, bit-width 16, bit-endian :be~%")
+    (format t "Case: bit-read-bytes, bit-width 16, bit-endian :be~%")
     (fast-io:with-fast-input (fiobuf octet-vector)
       (let ((bitio (make-bitio fiobuf #'fast-io:fast-read-byte)))
         (let ((seq (make-array (ceiling (/ (length octet-vector) 2))
                                :element-type '(unsigned-byte 16)
                                :initial-element 0)))
 
-          (test-bit-read-sequence bitio seq :be 16
+          (test-bit-read-bytes bitio seq :be 16
                                   #(#x5cf6 #xee79 #x9ade #xfff2 #x8802)))
         ))
 

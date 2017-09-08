@@ -2,7 +2,12 @@
 
 (defpackage #:bitio
   (:use #:cl)
-  (:export #:bitio))
+  (:export #:bitio
+           #:make-bitio
+           #:bit-read-bits
+           #:bit-read-byte
+           #:bit-read-bytes
+           #:bit-read-integer
+           #:bit-octet-read-boundary-p))
 
 (in-package #:bitio)
-
