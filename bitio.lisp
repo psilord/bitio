@@ -180,10 +180,6 @@ position."
                                     num-selected-bits)))
          (byte-specification (byte num-selected-bits bit-start-position)))
 
-    #++(format t "bs: ~8,'0B, n-s-b: ~A, b-s-p: ~A, b-s: ~A~%"
-               (read-bit-stable bitio)
-               num-selected-bits bit-start-position byte-specification)
-
     (let ((value 0))
       ;; First, we grab the bits we need out of the stable and put them in
       ;; the :le end of the value
@@ -411,5 +407,5 @@ there is no notification of this) or the function will return 0."
 
 (defun bit-octet-read-boundary-p (bitio)
   "Return T if the reading of the bit stream is at an octet boundary.
-NIL otherwise."
+NIL otherwise. If at EOF, return T, since techically, it is a boundary."
   (zerop (num-bits-in-stable bitio)))
