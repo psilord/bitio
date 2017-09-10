@@ -418,6 +418,7 @@
         ))
 
     ;; Test a non fast-io stream
+    (format t "Case: wrapping regular CL octet stream~%")
     (with-open-file (fin (asdf:system-relative-pathname :bitio "binfile")
                          :direction :input
                          :element-type '(unsigned-byte 8)
@@ -426,6 +427,20 @@
       (let ((bitio (make-bitio fin #'read-byte)))
         (test-bit-read-bits bitio 88 :be #x000102030405060708090a)
         ))
+
+    ;; Test a fast-io stream backed by a file.
+    (format t "Case: wrapping fast-io octet stream from a file~%")
+    (with-open-file (fin (asdf:system-relative-pathname :bitio "binfile")
+                         :direction :input
+                         :element-type '(unsigned-byte 8)
+                         :if-does-not-exist :error)
+      (fast-io:with-fast-input (fin-fast
+                                (make-array 0 :element-type '(unsigned-byte 8))
+                                fin)
+        ;; wrap fin stream with a bitio stream.
+        (let ((bitio (make-bitio fin-fast #'fast-io:fast-read-byte)))
+          (test-bit-read-bits bitio 88 :be #x000102030405060708090a)
+          )))
 
     (format t "All done.~%")
     ))
