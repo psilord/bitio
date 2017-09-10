@@ -396,6 +396,20 @@ the unsigned byte as defined in the function call arguments."
                            (byte-width 8)
                            ;; T for unsigned, NIL for signed.
                            (unsignedp T))
+  "This function reads 1 or more bytes where each byte is defined by
+BYTE-WIDTH and BIT-ENDIAN. BYTE-WIDTH indicates how many bits are in
+the byte and it defaults to 8. BIT-ENDIAN defines how to read those
+bits from the octet stream. It defaults to :BE (big endian), which
+means the MSBit of an octet in the octet stream is read first and will
+be the MSBit of the byte being assembled. If :LE is selected, then the
+LSBits of the octet are read and assembled as the MSBits of the byte.
+After the bytes are read, they are arrangedf according to BYTE-ENDIAN
+in the traditional meaning of multi-byte integers and that defaults
+to :LE.  Afterwards, depending on UNSIGNEDP, defaulting to T, the
+value is either returned unsigned or treated as a twos complement
+number and possibly turned negative by sign extension. The integer is
+returned.  NOTE: The arguments don't have to require that you read
+multiple of 8 bits to assemble the number."
 
   (let ((value 0))
     (ecase byte-endian
