@@ -22,7 +22,7 @@ examples which might be enough for you.
 
 ;; Usually, to implement the 3/8/5 bit reads, you'd read 2 bytes, then
 ;; do a pile of bit masking in order to retrive the values you desire.
-;; Here is a possible rendering of the above in bitio:
+;; Here is a possible (of several, actually) rendering of the above in bitio:
 
 (with-open-file (fin (asdf:system-relative-pathname :bitio "binfile")
                      :direction :input
