@@ -71,7 +71,7 @@
 
 ;; Note "byte" doesn't necessarily mean 8 bit octets!
 (defun test-bit-read-bytes (bitio seq bit-endian byte-width
-                               expected-seq &key (start 0) end)
+                            expected-seq &key (start 0) end)
 
   (let ((num-parts-read (bit-read-bytes
                          bitio seq bit-endian byte-width
@@ -281,8 +281,8 @@
                                :initial-element 0)))
 
           (test-bit-read-bytes bitio seq :be 4
-                                  #(#x5 #xc #xf #x6 #xe #xe #x7 #x9 #x9 #xa
-                                    #xd #xe #xf #xf #xf #x2 #x8 #x8 #x0 #x2)))
+                               #(#x5 #xc #xf #x6 #xe #xe #x7 #x9 #x9 #xa
+                                 #xd #xe #xf #xf #xf #x2 #x8 #x8 #x0 #x2)))
         ))
 
     (format t "Case: bit-read-bytes, bit-width 4, bit-endian :le~%")
@@ -293,11 +293,11 @@
                                :initial-element 0)))
 
           (test-bit-read-bytes bitio seq :le 4
-                                  (map 'vector
-                                       (lambda (x) (integer-reverse x 4))
-                                       #(#xc #x5 #x6 #xf #xe #xe #x9 #x7
-                                         #xa #x9 #xe #xd #xf #xf #x2 #xf
-                                         #x8 #x8 #x2 #x0))))
+                               (map 'vector
+                                    (lambda (x) (integer-reverse x 4))
+                                    #(#xc #x5 #x6 #xf #xe #xe #x9 #x7
+                                      #xa #x9 #xe #xd #xf #xf #x2 #xf
+                                      #x8 #x8 #x2 #x0))))
         ))
 
     (format t "Case: bit-read-bytes, bit-width 8, bit-endian :be~%")
@@ -308,8 +308,8 @@
                                :initial-element 0)))
 
           (test-bit-read-bytes bitio seq :be 8
-                                  #(#x5c #xf6 #xee #x79 #x9a
-                                    #xde #xff #xf2 #x88 #x02)))
+                               #(#x5c #xf6 #xee #x79 #x9a
+                                 #xde #xff #xf2 #x88 #x02)))
         ))
 
     (format t "Case: bit-read-bytes, bit-width 8, bit-endian :le~%")
@@ -320,10 +320,10 @@
                                :initial-element 0)))
 
           (test-bit-read-bytes bitio seq :le 8
-                                  (map 'vector
-                                       (lambda (x) (integer-reverse x 8))
-                                       #(#x5c #xf6 #xee #x79 #x9a
-                                         #xde #xff #xf2 #x88 #x02))))
+                               (map 'vector
+                                    (lambda (x) (integer-reverse x 8))
+                                    #(#x5c #xf6 #xee #x79 #x9a
+                                      #xde #xff #xf2 #x88 #x02))))
         ))
 
     (format t "Case: bit-read-bytes, bit-width 12, bit-endian :be~%")
@@ -334,7 +334,7 @@
                                :initial-element 0)))
 
           (test-bit-read-bytes bitio seq :be 12
-                                  #(#x5cf #x6ee #x799 #xade #xfff #x288 #x02)))
+                               #(#x5cf #x6ee #x799 #xade #xfff #x288 #x02)))
         ))
 
     (format t "Case: bit-read-bytes, bit-width 16, bit-endian :be~%")
@@ -345,7 +345,7 @@
                                :initial-element 0)))
 
           (test-bit-read-bytes bitio seq :be 16
-                                  #(#x5cf6 #xee79 #x9ade #xfff2 #x8802)))
+                               #(#x5cf6 #xee79 #x9ade #xfff2 #x8802)))
         ))
 
     (format t "Case: bit-read-integer, case 1~%")
@@ -417,6 +417,15 @@
         (test-bit-read-integer bitio 4 16 :be :le T #xfff29adeee795cf6)
         ))
 
+    ;; Test a non fast-io stream
+    (with-open-file (fin (asdf:system-relative-pathname :bitio "binfile")
+                         :direction :input
+                         :element-type '(unsigned-byte 8)
+                         :if-does-not-exist :error)
+      ;; wrap fin stream with a bitio stream.
+      (let ((bitio (make-bitio fin #'read-byte)))
+        (test-bit-read-bits bitio 88 :be #x000102030405060708090a)
+        ))
 
     (format t "All done.~%")
     ))
