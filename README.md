@@ -31,7 +31,7 @@ examples which might be enough for you.
                      :if-does-not-exist :error)
   ;; wrap fin stream with a bitio stream.
   (let ((bitio (make-bitio fin #'read-byte)))
-    (let ((32-bits (bitio:bit-read-integer bitio :num-bytes 4 :unsignedp NIL))
+    (let ((32-bits (bitio:bit-read-integer bitio :unsignedp NIL))
           (16-bits (bitio:bit-read-integer bitio :num-bytes 2 :byte-endian :be
 	                                   :unsignedp NIL))
           (3-bits (bitio:bit-read-integer bitio :num-bytes 1 :byte-width 3))
