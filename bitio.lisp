@@ -319,6 +319,52 @@ position."
 ;; canonical integer.
 (defun bit-read-bits (bitio bit-read-count bit-endian
                       &optional (eof-error-p T) (eof-value NIL))
+  "Before describing how this function works, we'll describe the form the
+octets are in from the underlying octet-stream that the BITIO instance
+contains. The octets are in a canonical form, with bits written left to right
+and given labels:
+
+      octet:  [2^7 2^6 2^5 2^4 2^3 2^2 2^1 2^0]
+  bit label:  [ a   b   c   d   e   f   g   h ]
+
+We call bit 'a' the MSBit and bit 'h' the LSBit of the octet.
+
+So, when we strip off bits from the octets, we look at BIT-ENDIAN to
+determine which side of the octet we are getting the bits.  If it
+is :BE, we take the bits from the MSBit side of the octet, and if it
+is :LE we take the bits form the LSBit side of the octet.
+
+An example call of taking 8 bits from the BIT-ENDIAN :BE direction
+will result in the function returns two values: the unsigned integer
+with the bits in these positions: 'abcdefgh' and the number of bits read,
+in this case 8.
+
+In a different scenario, we might read 5 bits :BE, to return the values:
+('abcde' 5), and then read 3 bits :LE, which returns the values: ('hgf' 3).
+
+Suppose we read 12 bits :LE from the start of an octet boundary. The
+underlying octet stream might look like this in canonical form with
+the left octet being the next octet ready to read:
+
+[abcdefgh][ijklmnop][...]...
+
+Then, we read 12 bits in this order: hgfedcbaponm and return the
+values of it and 12 as the bits read. This read consumes the first
+octet starting from the :LE side, then half of the second octet
+starting from the :LE side, leaving the bits 'ijkl' in the second
+octet to be read in the next bit-read-bits call, however you want to
+read them, plus any additional bits from additional octet later in the
+stream.
+
+It is not required that you read 8 bit multiples or that those reads are
+aligned to the underlying octet boundaries in the stream. But, if
+EOF-ERROR-P and EOF-VALUE are used as in READ, you can know if you hit
+EOF properly. If you try to read X number of bits, but hit EOF while
+getting them, the bits of the short read will be returned and the number
+of successful bits read returned. It is recommended that you check the
+number of bits you expected to read to ensure the value is what you
+expect."
+
   (when (zerop bit-read-count)
     (return-from bit-read-bits (values 0 0)))
 
@@ -355,7 +401,7 @@ EOF-VALUE as in READ-BYTE). The returned value is always unsigned."
 ;; TODO: Check what happens when short read ends in a partially available byte,
 ;; what is the right action to do in that case?
 (defun bit-read-bytes (bitio seq bit-endian byte-width
-                          &key (start 0) end)
+                       &key (start 0) end)
   "This reads UNSIGNED 'bytes' into SEQ given :START and :END keywords.
 THe default span is the entire sequence. BIT-ENDIAN is how the
 individual bits are read from the octet stream, and byte-width is how
