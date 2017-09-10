@@ -99,7 +99,7 @@ instance the bitio is wrapping."))
 (defun make-bitio (octet-stream bitio/read-octet &rest init-args)
   "OCTET-STREAM must be a stream that is ready to read/write binary octets
 of (unsigned-byte 8) type. BITIO/READ-OCTET is a function associated with
-the OCTET-STREAM that reads a single octet from the stream. Return an
+the OCTET-STREAM that reads a single octet from that stream. Returns an
 instance of a BITIO class."
   (apply #'make-instance 'bitio
          :octet-stream octet-stream
@@ -391,10 +391,14 @@ expect."
 ;; EXPORT
 (defun bit-read-byte (bitio byte-width bit-endian
                       &optional (eof-error-p T) (eof-value NIL))
-  "Read a single unsigned 'byte' from the bitio stream. You must specify
-the BIT-ENDIAN mode (:be or :le) and how big the byte is in bits, the
-BYTE-WIDTH. You can supply the optional keywords EOF-ERROR-P and
-EOF-VALUE as in READ-BYTE). The returned value is always unsigned."
+  "Read a single unsigned 'byte' from the bitio stream. You must
+specify the BIT-ENDIAN mode (:BE or :LE, See BIT-READ-BITS) and how
+big the byte is in bits: BYTE-WIDTH. You can supply the optional
+keywords EOF-ERROR-P and EOF-VALUE as in READ-BYTE). The returned
+value is always unsigned. If the number of bits requested is more than
+is in the stream, you will get a short read of bits, so it is
+recommended to check the return value to ensure you got the number of
+bits you expected."
   (bit-read-bits bitio byte-width bit-endian eof-error-p eof-value))
 
 ;; EXPORT
@@ -403,7 +407,7 @@ EOF-VALUE as in READ-BYTE). The returned value is always unsigned."
 (defun bit-read-bytes (bitio seq bit-endian byte-width
                        &key (start 0) end)
   "This reads UNSIGNED 'bytes' into SEQ given :START and :END keywords.
-THe default span is the entire sequence. BIT-ENDIAN is how the
+The default span is the entire sequence. BIT-ENDIAN is how the
 individual bits are read from the octet stream, and byte-width is how
 many bits wide a 'byte' is in the stream. Return how many elements
 have been read. The sequence is destructively modified. At EOF
@@ -445,17 +449,15 @@ the unsigned byte as defined in the function call arguments."
   "This function reads 1 or more bytes where each byte is defined by
 BYTE-WIDTH and BIT-ENDIAN. BYTE-WIDTH indicates how many bits are in
 the byte and it defaults to 8. BIT-ENDIAN defines how to read those
-bits from the octet stream. It defaults to :BE (big endian), which
-means the MSBit of an octet in the octet stream is read first and will
-be the MSBit of the byte being assembled. If :LE is selected, then the
-LSBits of the octet are read and assembled as the MSBits of the byte.
-After the bytes are read, they are arrangedf according to BYTE-ENDIAN
-in the traditional meaning of multi-byte integers and that defaults
-to :LE.  Afterwards, depending on UNSIGNEDP, defaulting to T, the
-value is either returned unsigned or treated as a twos complement
-number and possibly turned negative by sign extension. The integer is
-returned.  NOTE: The arguments don't have to require that you read
-multiple of 8 bits to assemble the number."
+bits from the octet stream. It defaults to :BE (big endian), See
+BIT-READ-BITS for further explanation.  After the bytes are read, they
+are arranged according to BYTE-ENDIAN in the traditional meaning of
+multi-byte integers and that defaults to :LE.  Then depending
+on UNSIGNEDP, defaulting to T, the value is either returned unsigned
+or treated as a twos complement number and possibly turned negative by
+sign extension. The integer is returned.  NOTE: The arguments don't
+have to require that you read multiple of 8 bits to assemble the
+number."
 
   (let ((value 0))
     (ecase byte-endian
