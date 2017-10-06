@@ -12,7 +12,7 @@ quick exmple with no explanation about how it works, only what it does.
 
 * A fast example.
 
-#+BEGIN_SRC lisp
+#+BEGIN_SRC common-lisp
 ;; Suppose we want to read a binary octet stream where we must read in order:
 ;; 32 bits as a signed integer in little endian format, then
 ;; 16 bits as a signed integer in big endian format, then
