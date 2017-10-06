@@ -1,0 +1,67 @@
+* BITIO: A Common Lisp library for processing octet streams as bit streams.
+
+This library can currently only provide READING stream of bits. Later
+I'll add WRITING a stream of bits.
+
+Reading bits as a bit stream is a funny business and requires a bit of
+demonstration (no pun intended) of the edge cases and structural format
+of how the bits are layed out on disk, in memory, and in multi-part integers.
+
+Before getting to nitty gritty about the API and how it works, here is a
+quick exmple with no explanation about how it works, only what it does.
+
+* A fast example.
+
+#+BEGIN_SRC lisp
+;; Suppose we want to read a binary octet stream where we must read in order:
+;; 32 bits as a signed integer in little endian format, then
+;; 16 bits as a signed integer in big endian format, then
+;; 3 bits as an unsigned integer, then
+;; 8 bits as an unsigned integer, then
+;; 5 bits as an unsigned integer, then
+;; read a number of octets denoted by the 8-bit number,
+;; for a total of 8 + N bytes read.
+
+;; Usually, to implement the 3/8/5 bit reads, you'd read 2 bytes,
+;; then do a pile of bit masking/shifting/anding, etc in order to
+;; retrive the values you desire.  You would also implicitly assume
+;; some bit orderings too while doing the masking. Here is a
+;; possible (of several, actually) rendering of the above in bitio:
+
+(with-open-file (fin (asdf:system-relative-pathname :bitio "binfile")
+                     :direction :input
+                     :element-type '(unsigned-byte 8)
+                     :if-does-not-exist :error)
+  ;; wrap fin stream with a bitio stream.
+  (let ((bitio (make-bitio fin #'read-byte)))
+    (let ((32-bits (bitio:bit-read-integer bitio :unsignedp NIL))
+          (16-bits (bitio:bit-read-integer bitio :num-bytes 2 :byte-endian :be
+                                                 :unsignedp NIL))
+          (3-bits (bitio:bit-read-integer bitio :num-bytes 1 :byte-width 3))
+          (8-bits (bitio:bit-read-integer bitio :num-bytes 1))
+          (5-bits (bitio:bit-read-integer bitio :num-bytes 1 :byte-width 5))
+          (seq (make-array 8-bit :element-type '(unsigned-byte 8)))
+          (num-read (bitio:bit-read-bytes bitio seq :be 8)))
+
+      (format t "Do something with the read data values....~%")
+
+      ))
+#+END_SRC
+
+
+* Bit Stream Representation
+** Canonical Form
+Raw bits in memory are represented by unsigned integers in CL memory.
+
+We lay them out like this (for N bits):
+
+MSBit [ 2^(N) 2^(N-1) 2^(N-2) ... 2^(1) 2^(0) ] LSBit
+
+This representation is both the "written on paper" representation and
+the in memory represetation of the bits in CL memory.
+
+So, the value #b1100 is the set of bits such that the MSBit is the left
+most 1 and the LSBit is the right most 0.
+
+** Reading
+** Writing
