@@ -55,10 +55,12 @@ Raw bits in memory are represented by unsigned integers in CL memory.
 
 We lay them out like this (for N bits):
 
-MSBit [ 2^(N) 2^(N-1) 2^(N-2) ... 2^(1) 2^(0) ] LSBit
+| MSBit |         |         |     |       | LSBit |
+|-------+---------+---------+-----+-------+-------|
+| 2^{N} | 2^{N-1} | 2^{N-2} | ... | 2^{1} | 2^{0} |
 
 This representation is both the "written on paper" representation and
-the in memory represetation of the bits in CL memory.
+also the in memory represetation of the bits in CL memory.
 
 So, the value #b1100 is the set of bits such that the MSBit is the left
 most 1 and the LSBit is the right most 0.
