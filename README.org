@@ -97,6 +97,20 @@ construction of a BITIO instance you must supply the stream being
 wrapped and the functions for reading and writing that are
 associated with the wrapped stream.
 
+A more useful manner to think about the octet stream is that each
+(UNSIGNED-BYTE 8) octet is automatically in a canonical form for a
+8-bit unsigned integer. It is infact the form that all modern OSes
+and hardware will read an octet stream from memory, network, or
+storage. The MSBit is the leftmost bit, and the LSBit is the
+rightmost bit.
+
+| Head       | Next Octet | Next Octet | Remaining Octets |
+|------------+------------+------------+------------------|
+| #b00110011 | #b10101011 | #b01001101 | ...              |
+
+From this convenient representation, we now describe how to read
+individual bits from it.
+
 ** Reading from BITIO
 *** Bit Reading
 *** Integer Reading
