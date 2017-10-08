@@ -51,29 +51,60 @@ quick exmple with no explanation about how it works, only what it does.
 
 * Bit Stream Representation
 ** Canonical Form of a Set of Bits
-Unsigned integers represent a set of ordered raw bits in CL memory.
+BITIO uses unsigned integers to represent a set of ordered raw
+bits in CL memory.
 
 The following representation is both the "written on paper"
 representation and also the in memory represetation of the bits in
-CL memory.
+CL memory. For N-bits in an ordered set of bits, we have:
 
-|-------+---------+---------+-----+-------+-------|
-| MSBit |         |         |     |       | LSBit |
-|-------+---------+---------+-----+-------+-------|
-| 2^{N} | 2^{N-1} | 2^{N-2} | ... | 2^{1} | 2^{0} |
-|-------+---------+---------+-----+-------+-------|
-| 0     |       1 |       0 | ... |     1 | 1     |
-|-------+---------+---------+-----+-------+-------|
+|---------+---------+---------+-----+-------+-------|
+| MSBit   |         |         |     |       | LSBit |
+|---------+---------+---------+-----+-------+-------|
+| 2^{N-1} | 2^{N-2} | 2^{N-3} | ... | 2^{1} | 2^{0} |
+|---------+---------+---------+-----+-------+-------|
+| 0       |       1 |       0 | ... |     1 | 1     |
+|---------+---------+---------+-----+-------+-------|
 
-The value #b010010011 is the set of bits such that the MSBit is
-the left most 0 and the LSBit is the right most 1.
+Suppose we have an 8-bit ordered bit set represented by the
+unsigned integer #b01010011 in canonical form. The MSBit is the
+left most 0 and the LSBit is the right most 1.
 
 In BITIO, the unsigned integer representing the raw bits and the
 count of those bits are often found together in the API. This
-allows is to know that we are dealing with a bit set of N bits.
+allows is to know that we are dealing with a bit set of N bits,
+even if all of those bits are 0.
 
 The ordering aspect arises in that we can only append/take bits from the
 MSBit or the LSBit side of the bit set in canonical form.
 
-** Reading
-** Writing
+** Octet Stream Source for Bits
+BITIO is a stream that explicity wraps another stream. Let's call
+this other stream S. S *must* have the type (UNSIGNED-BYTE 8) and
+hence will supply 8-bit unsigned integers.
+
+Here is an abstract representation of S where the Head column is
+the octet about to be read from the octet stream, then, Next Octet
+is the next octet read, and so on, and Remaining Octets is all of
+the rest of the ordered octets in stream S, as expected.
+
+| Head | Next Octet | Next Octet | Remaining Octets |
+|------+------------+------------+------------------|
+| #x33 | #xAB       | #x4D       | ...              |
+
+BITIO is agnostic about the streams it wraps, since upon
+construction of a BITIO instance you must supply the stream being
+wrapped and the functions for reading and writing that are
+associated with the wrapped stream.
+
+** Reading from BITIO
+*** Bit Reading
+*** Integer Reading
+** Writing to BITIO
+Writing bits to the stream is not implemented at this time. It will be
+implemented in a future revision of BITIO.
+*** Bit Writing
+TODO
+*** Integer Writing
+TODO
+** API Summary
