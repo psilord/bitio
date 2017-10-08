@@ -51,24 +51,29 @@ quick exmple with no explanation about how it works, only what it does.
 
 * Bit Stream Representation
 ** Canonical Form of a Set of Bits
-A set of ordered raw bits in memory are represented by an unsigned integer
-in CL memory.
+Unsigned integers represent a set of ordered raw bits in CL memory.
 
 The following representation is both the "written on paper"
 representation and also the in memory represetation of the bits in
 CL memory.
-
 
 |-------+---------+---------+-----+-------+-------|
 | MSBit |         |         |     |       | LSBit |
 |-------+---------+---------+-----+-------+-------|
 | 2^{N} | 2^{N-1} | 2^{N-2} | ... | 2^{1} | 2^{0} |
 |-------+---------+---------+-----+-------+-------|
-| 1     |       1 |       0 | ... |     0 | 1     |
+| 0     |       1 |       0 | ... |     1 | 1     |
 |-------+---------+---------+-----+-------+-------|
 
-So, the value #b1100 is the set of bits such that the MSBit is the left
-most 1 and the LSBit is the right most 0.
+The value #b010010011 is the set of bits such that the MSBit is
+the left most 0 and the LSBit is the right most 1.
+
+In BITIO, the unsigned integer representing the raw bits and the
+count of those bits are often found together in the API. This
+allows is to know that we are dealing with a bit set of N bits.
+
+The ordering aspect arises in that we can only append/take bits from the
+MSBit or the LSBit side of the bit set in canonical form.
 
 ** Reading
 ** Writing
