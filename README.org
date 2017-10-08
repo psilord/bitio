@@ -50,17 +50,22 @@ quick exmple with no explanation about how it works, only what it does.
 
 
 * Bit Stream Representation
-** Canonical Form
-Raw bits in memory are represented by unsigned integers in CL memory.
+** Canonical Form of a Set of Bits
+A set of ordered raw bits in memory are represented by an unsigned integer
+in CL memory.
 
-We lay them out like this (for N bits):
+The following representation is both the "written on paper"
+representation and also the in memory represetation of the bits in
+CL memory.
 
+
+|-------+---------+---------+-----+-------+-------|
 | MSBit |         |         |     |       | LSBit |
 |-------+---------+---------+-----+-------+-------|
 | 2^{N} | 2^{N-1} | 2^{N-2} | ... | 2^{1} | 2^{0} |
-
-This representation is both the "written on paper" representation and
-also the in memory represetation of the bits in CL memory.
+|-------+---------+---------+-----+-------+-------|
+| 1     |       1 |       0 | ... |     0 | 1     |
+|-------+---------+---------+-----+-------+-------|
 
 So, the value #b1100 is the set of bits such that the MSBit is the left
 most 1 and the LSBit is the right most 0.
