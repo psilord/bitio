@@ -10,7 +10,7 @@ of how the bits are layed out on disk, in memory, and in multi-part integers.
 Before getting to nitty gritty about the API and how it works, here is a
 quick exmple with no explanation about how it works, only what it does.
 
-* A fast example.
+* A fast example:
 
 #+BEGIN_SRC common-lisp
 ;; Suppose we want to read a binary octet stream where we must read in order:
