@@ -667,6 +667,16 @@ MSBit in this integer is 1 which makes it unsigned.
 
 To get this decimal value: -263345357
 
+We can check our work like this:
+
+#+BEGIN_EXAMPLE
+CL-USER> (ldb (byte 32 0) -263345357)
+4031621939 (32 bits, #xF04DAB33)
+#+END_EXAMPLE
+
+Which allows us to recover the original unsigned encoding after
+reading it from the octet stream.
+
 *** Extended example with ~bit-read-integer~
 
 Here we write out the code that will read a BITIO wrapped stream
@@ -718,14 +728,14 @@ the specification in a logical and meaningful manner.
                ;; fixed blocksize
                (parse-utf8 bitio 31)))
          (blocksize-value
-           (when (eql #b011 (ldb inter-channel-block-size (byte 3 1)))
-             (if (zerop (ldb inter-channel-block-size (byte 1 0)))
+           (when (eql #b011 (ldb (byte 3 1) inter-channel-block-size))
+             (if (zerop (ldb (byte 1 0) inter-channel-block-size))
                  (bitio:bit-read-integer :num-bytes 1)
                  (bitio:bit-read-integer :num-bytes 2
                                          :byte-endian :be))))
          (sample-rate-value
-           (let ((trigger (ldb sample-rate (byte 2 2)))
-                 (kind (ldb sample-rate (byte 2 0))))
+           (let ((trigger (ldb (byte 2 2) sample-rate))
+                 (kind (ldb (byte 2 0) sample-rate)))
 
              (when (eql #b11 trigger)
                (cond
