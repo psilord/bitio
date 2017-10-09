@@ -750,6 +750,13 @@ implemented in a future revision of BITIO.
 *** Bit Writing
 *** Integer Writing
 ** API Summary
+*** Type BITIO
+*** Function MAKE-BITIO
+*** Function BIT-READ-BITS
+*** Function BIT-READ-BYTE
+*** Function BIT-READ-BYTES
+*** Function BIT-READ-INTEGER
+*** Function BIT-OCTET-READ-BOUNDARY-P
 ** Known Bugs & Omissions
 + There is no equivalent for WITH-OPEN-FILE for BITIO yet.
 + You cannot CLOSE a BITIO yet.
