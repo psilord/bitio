@@ -242,7 +242,7 @@ The function to read bits from a BITIO stream is:
 
 NOTE: This function doesn't understand properties of
 integers. It only reads raw bits from the underlying octet
-stream. Under certain conditions, it is meaningsul to interpret
+stream. Under certain conditions, it is meaningful to interpret
 the numbers this function returns as unsigned integers, but in
 general, if you want to read integers explicitly, there is a
 function for that described later.
