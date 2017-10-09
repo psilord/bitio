@@ -265,6 +265,7 @@ Suppose we have wrapped this octet stream:
 |-----------+-----------+-----------+------------------|
 
 Then, we call this function:
+
 #+BEGIN_SRC common-lisp
 (bitio:bit-read-bits bitio 5 :be)
 #+END_SRC
@@ -348,6 +349,7 @@ Let's start with the original BITIO stream:
 |-----------+-----------+-----------+------------------|
 
 Then, we call this function:
+
 #+BEGIN_SRC common-lisp
 (bitio:bit-read-bits bitio 5 :le)
 #+END_SRC
@@ -388,6 +390,7 @@ Notice carefully, that bits a, b, c are available to be read
 from Octet + 0.
 
 Suppose we read those bits, and a few more with this call:
+
 #+BEGIN_SRC common-lisp
 (bitio:bit-read-bits bitio 7 :le)
 #+END_SRC
@@ -396,6 +399,7 @@ We will read the bits in this order: c, b, a, p, o, n, m and
 put them into the Canonical form of cbaponm.
 
 Then, we return these values:
+
 #+BEGIN_SRC common-lisp
 #b1001101
 ;;cbaponm
@@ -438,7 +442,8 @@ Then, we call this function:
 (bitio:bit-read-bits bitio 3 :le)
 #+END_SRC
 
-And get back this result:
+And get back these results:
+
 #+BEGIN_SRC common-lisp
 #b110
 ;;hgf
@@ -455,11 +460,13 @@ leaving the BITIO stream in this configuration:
 |-----------+-----------+-----------+------------------|
 
 Then, we switch bit endianess and read 3 bits:
+
 #+BEGIN_SRC common-lisp
 (bitio:bit-read-bits bitio 3 :be)
 #+END_SRC
 
 which returns these values:
+
 #+BEGIN_SRC common-lisp
 #b001
 ;;abc
@@ -486,7 +493,7 @@ and see what happens:
 
 We read bits in this order: e d p o n m
 
-And this is the result we get back:
+And these are the values we get back:
 
 #+BEGIN_SRC common-lisp
 #b011101
@@ -524,5 +531,5 @@ implemented in a future revision of BITIO.
 *** Integer Writing
 ** API Summary
 ** Known Bugs & Omissions
-+ There is no equivalent for WITH-OPEN-FILE for bitio yet.
++ There is no equivalent for WITH-OPEN-FILE for BITIO yet.
 + You cannot CLOSE a BITIO yet.
