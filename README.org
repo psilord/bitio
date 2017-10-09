@@ -529,14 +529,20 @@ bit-read-bits.
 *** Integer Reading: Function ~BIT-READ-INTEGER~
 Integers (both signed and unsigned) are interpretations of raw
 bits stored in a canonical form with certain constraints and
-using a certain structures.
+in a certain structure.
 
 The constraint in question are the parameters under which sign
 extension happens. Sign extension in languages like C are easy
 to perform since there are assembly level operations to perform
 this for each hardware sized quantity in which the bit pattern
 is stored. In Common Lisp, with arbitrarily sized integers,
-there is more work to accomodate sign extension rules.
+there is more work to accomodate sign extension rules. To
+explain deeper for CL, an unsigned value is considered to have
+an infinite number of zero bits prefixing it. A signed value
+that is negative happens to have an infinite number of 1 bits
+prefixing it. There is a little bit of math to enable this idea
+of infinite prefixes of zeros or ones that we must accomplish in
+CL.
 
 The structure in question is the ordering of the multiple bytes
 that constitute a multi-part integer (here, defined here as M
@@ -589,6 +595,154 @@ The arguments are:
 |-------------+----------------------------------------------|
 | UNSIGNEDP   | Should we treat the integer as unsigned      |
 |-------------+----------------------------------------------|
+
+This function is the meat and potatoes for reading integers out
+of a BITIO stream. The read integers need not be octet aligned,
+and the bytes constituting them need not be 8-bits wide.
+
+Let's do an example of this call:
+
+First, we show a BITIO stream (with hexadcimal view added):
+
+|-----------+-----------+-----------+-----------+------------------|
+| Octet + 0 | Octet + 1 | Octet + 2 | Octet + 3 | Remaining Octets |
+|-----------+-----------+-----------+-----------+------------------|
+| #x33      | #xAB      | #x4D      | #xF0      | ........         |
+| 00110011  | 10101011  | 01001101  | 11110000  | ........         |
+| abcdefgh  | ijklmnop  | qrstuvwx  | yzABCDEF  | ........         |
+|-----------+-----------+-----------+-----------+------------------|
+
+Then, we perform this call:
+
+#+BEGIN_SRC common-lisp
+(bitio:bit-read-integer bitio :unsignedp NIL)
+#+END_SRC
+
+Here is what happens. This descripton is semantically what happens,
+but not neceissarily algorithmically what happens.
+
++ Since BYTE-WIDTH is 8, _each byte_ is going to be 8-bits long.
++ Since BIT-ENDIAN is :be, we read the bits in a left to right order
+  for _each byte_.
++ Since NUM-BYTES is 4, we read 4 8-bit unsigned values.
++ Since BYTE-ENDIAN is :le, we'll pack the bytes into the
+  integer in little endian order.
++ Since UNSIGNEDP is NIL, we will treat the value as signed.
+
+So, the first thing we do is read the 4 bytes in this order:
+
+#x33 #xAB #x4D #xF0
+
+And then pack them into the integer such that the left most byte is
+the least significant byte in the integer:
+
+#xF04DAB33
+
+And then, since UNSIGNEDP is NIL, we convert this unsigned
+value, using the knowledge of the total number of bits we need
+to represent this number (* num-bytes byte-width), and that the
+MSBit in this integer is 1 which makes it unsigned.
+
+To get this decimal value: -263345357
+
+*** Extended example with ~bit-read-integer~
+
+Here we write out the code that will read a BITIO wrapped stream
+that is reading a FLAC binary file. The parser is expected to
+read a FRAME_HEADER which is defined here:
+
+https://xiph.org/flac/format.html#frame_header
+
+NOTE: All numbers are in big-endian format in FLAC unless
+otherwise noted. Even though bitio:bit-read-integer defaults
+to :le for byte-endian, it only matters if reading more than 1
+byte to create the integer. So, in those places we manually
+specify the ordering.
+
+NOTE: In a future revision of BITIO, I may revisit this issue
+and store things like default settings in the BITIO instance
+itself.
+
+The point of this example is to see how we avoid the perilous
+bit-masking that this code would normally have to do to read the
+above binary format. Where we do extract bits, it is following
+the specification in a logical and meaningful manner.
+
+#+BEGIN_SRC common-lisp
+(defun parse-frame-header (bitio)
+  "Parse a FRAME_HEADER and return a structure with that information in it."
+  (let* ((sync-code
+           (bitio:bit-read-bits bitio 14 :be))
+         (reserved-0
+           (bitio:bit-read-bits bitio 1 :be))
+         (blocking-strategy
+           (bitio:bit-read-bits bitio 1 :be))
+         (inter-channel-block-size
+           (bitio:bit-read-integer bitio :num-bytes 1 :byte-width 4))
+         (sample-rate
+           (bitio:bit-read-integer bitio :num-bytes 1 :byte-width 4))
+         (channel-assignment
+           (bitio:bit-read-integer bitio :num-bytes 1 :byte-width 4))
+         (sample-size-in-bits
+           (bitio:bit-read-integer bitio :numn-bytes 1 :byte-width 3))
+         (reserved-1
+           (bitio:bit-read-bits bitio 1 :be))
+         (coded-frame-or-sample
+           (if (eql blocking-strategy 1)
+               ;; variable blocksize
+               (parse-utf8 bitio 36)
+               ;; fixed blocksize
+               (parse-utf8 bitio 31)))
+         (blocksize-value
+           (when (eql #b011 (ldb inter-channel-block-size (byte 3 1)))
+             (if (zerop (ldb inter-channel-block-size (byte 1 0)))
+                 (bitio:bit-read-integer :num-bytes 1)
+                 (bitio:bit-read-integer :num-bytes 2
+                                         :byte-endian :be))))
+         (sample-rate-value
+           (let ((trigger (ldb sample-rate (byte 2 2)))
+                 (kind (ldb sample-rate (byte 2 0))))
+
+             (when (and (eql #b11 trigger)
+                        (not (eql #b11 kind)))
+               (cond
+                 ((eql kind #b00)
+                  (bitio:bit-read-integer bitio :num-bytes 1))
+                 ((eql kind #b01)
+                  (bitio:bit-read-integer bitio :num-bytes 2
+                                                :byte-endian :be))
+                 ((eql kind #b10)
+                  (* 10 (bitio:bit-read-integer bitio
+                                                :num-bytes 2
+                                                :byte-endian :be)))
+                 ((eql kind #b11)
+                  (error
+                   "invalid parse of frame-header: mimic sync code"))))))
+         (crc-8 (bitio:bit-read-integer bitio :num-bytes 1)))
+
+    (unless (eql sync-code #b11111111111110)
+      (error "invalid parse of frame-header: bad sync code"))
+
+    ;; Then pack it up and send it off.
+    (make-frame-header blocking-strategy
+                       inter-channel-block-size
+                       sample-rate
+                       channel-assignment
+                       sample-size-in-bits
+                       coded-frame-or-sample
+                       blocksize-value
+                       sample-rate-value
+                       crc-8)))
+
+(defun parse-utf8 (bitio num-bits)
+  (let ((bit-set (bitio:bit-read-bits bitio num-bits :be)))
+    ;; Next function defined elsewhere.
+    (convert-to-utf8 bit-set)))
+#+END_SRC
+
+The above represents a pretty complex use of BITIO to save a lot
+of work. It allows a natural parsing (and ease of debugging) of
+the format of the FRAME_HEADER in the FLAC binary format.
 
 ** Writing to BITIO
 Writing bits to the stream is not implemented at this time. It will be
