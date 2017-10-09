@@ -91,7 +91,7 @@ column is the octet about to be read from the octet stream, then,
 Octet + 1 is the next octet read, and so on, and Remaining Octets
 is all of the rest of the ordered octets in stream S, as expected.
 
-| Octet + 0 | Octet + 1 | Octest + 2 | Remaining Octets |
+| Octet + 0 | Octet + 1 | Octet + 2  | Remaining Octets |
 |-----------+-----------+------------+------------------|
 | #x33      | #xAB      | #x4D       | ...              |
 
