@@ -263,8 +263,8 @@ Suppose we have wrapped this octet stream:
 |-----------+-----------+-----------+------------------|
 | Octet + 0 | Octet + 1 | Octet + 2 | Remaining Octets |
 |-----------+-----------+-----------+------------------|
-| 00110011  | 10101011  | 01001101  | ...              |
-| abcdefgh  | ijklmnop  | qrstuvwx  | ...              |
+| =00110011= | =10101011= | =01001101= | ...              |
+| =abcdefgh= | =ijklmnop= | =qrstuvwx= | ...              |
 |-----------+-----------+-----------+------------------|
 
 Then, we call this function:
@@ -295,8 +295,8 @@ Now, the BITIO stream will look like this:
 |-----------+-----------+-----------+------------------|
 | Octet + 0 | Octet + 1 | Octet + 2 | Remaining Octets |
 |-----------+-----------+-----------+------------------|
-| -----011  | 10101011  | 01001101  | ...              |
-| -----fgh  | ijklmnop  | qrstuvwx  | ...              |
+| =-----011= | =10101011= | =01001101= | ...              |
+| =-----fgh= | =ijklmnop= | =qrstuvwx= | ...              |
 |-----------+-----------+-----------+------------------|
 
 NOTE: The - character represents bits that have been stripped
@@ -324,8 +324,8 @@ At this point, the BITIO stream will look like this:
 |-----------+-----------+-----------+------------------|
 | Octet + 0 | Octet + 1 | Octet + 2 | Remaining Octets |
 |-----------+-----------+-----------+------------------|
-| --------  | 10101011  | 01001101  | ...              |
-| --------  | ijklmnop  | qrstuvwx  | ...              |
+| =--------= | =10101011= | =01001101= | ...              |
+| =--------= | =ijklmnop= | =qrstuvwx= | ...              |
 |-----------+-----------+-----------+------------------|
 
 which simplifies to:
@@ -333,8 +333,8 @@ which simplifies to:
 |-----------+-----------+-----------+------------------|
 | Octet + 0 | Octet + 1 | Octet + 2 | Remaining Octets |
 |-----------+-----------+-----------+------------------|
-| 10101011  | 01001101  | ......... | ...              |
-| ijklmnop  | qrstuvwx  | ......... | ...              |
+| =10101011= | =01001101= | ......... | ...              |
+| =ijklmnop= | =qrstuvwx= | ......... | ...              |
 |-----------+-----------+-----------+------------------|
 
 **** Little Endian Reads
@@ -347,8 +347,8 @@ Let's start with the original BITIO stream:
 |-----------+-----------+-----------+------------------|
 | Octet + 0 | Octet + 1 | Octet + 2 | Remaining Octets |
 |-----------+-----------+-----------+------------------|
-| 00110011  | 10101011  | 01001101  | ...              |
-| abcdefgh  | ijklmnop  | qrstuvwx  | ...              |
+| =00110011= | =10101011= | =01001101= | ...              |
+| =abcdefgh= | =ijklmnop= | =qrstuvwx= | ...              |
 |-----------+-----------+-----------+------------------|
 
 Then, we call this function:
@@ -385,8 +385,8 @@ Then, the BITIO stream is in this state:
 |-----------+-----------+-----------+------------------|
 | Octet + 0 | Octet + 1 | Octet + 2 | Remaining Octets |
 |-----------+-----------+-----------+------------------|
-| 001-----  | 10101011  | 01001101  | ...              |
-| abc-----  | ijklmnop  | qrstuvwx  | ...              |
+| =001-----= | =10101011= | =01001101= | ...              |
+| =abc-----= | =ijklmnop= | =qrstuvwx= | ...              |
 |-----------+-----------+-----------+------------------|
 
 Notice carefully, that bits a, b, c are available to be read
@@ -414,8 +414,8 @@ which leaves the stream in this state:
 |-----------+-----------+-----------+------------------|
 | Octet + 0 | Octet + 1 | Octet + 2 | Remaining Octets |
 |-----------+-----------+-----------+------------------|
-| --------  | 1010----  | 01001101  | ...              |
-| --------  | ijkl----  | qrstuvwx  | ...              |
+| =--------= | =1010----= | =01001101= | ...              |
+| =--------= | =ijkl----= | =qrstuvwx= | ...              |
 |-----------+-----------+-----------+------------------|
 
 which simplifies to:
@@ -423,8 +423,8 @@ which simplifies to:
 |-----------+-----------+-----------+------------------|
 | Octet + 0 | Octet + 1 | Octet + 2 | Remaining Octets |
 |-----------+-----------+-----------+------------------|
-| 1010----  | 01001101  | ........  | ...              |
-| ijkl----  | qrstuvwx  | ........  | ...              |
+| =1010----= | =01001101= | ........  | ...              |
+| =ijkl----= | =qrstuvwx= | ........  | ...              |
 |-----------+-----------+-----------+------------------|
 **** Mixed Bit Endian Reads
 It is fully possible to intermix bit big endian and bit little
@@ -435,8 +435,8 @@ First start with the BITIO stream:
 |-----------+-----------+-----------+------------------|
 | Octet + 0 | Octet + 1 | Octet + 2 | Remaining Octets |
 |-----------+-----------+-----------+------------------|
-| 00110011  | 10101011  | 01001101  | ...              |
-| abcdefgh  | ijklmnop  | qrstuvwx  | ...              |
+| =00110011= | =10101011= | =01001101= | ...              |
+| =abcdefgh= | =ijklmnop= | =qrstuvwx= | ...              |
 |-----------+-----------+-----------+------------------|
 
 Then, we call this function:
@@ -458,11 +458,13 @@ leaving the BITIO stream in this configuration:
 |-----------+-----------+-----------+------------------|
 | Octet + 0 | Octet + 1 | Octet + 2 | Remaining Octets |
 |-----------+-----------+-----------+------------------|
-| 00110---  | 10101011  | 01001101  | ...              |
-| abcde---  | ijklmnop  | qrstuvwx  | ...              |
+| =00110---= | =10101011= | =01001101= | ...              |
+| =abcde---= | =ijklmnop= | =qrstuvwx= | ...              |
 |-----------+-----------+-----------+------------------|
 
-Then, we switch bit endianess and read 3 bits:
+Then, we switch bit endianess and read 3 bits. These three
+bits are read from the MSBit side of the Octet + 0 value,
+so, starting at bit a.
 
 #+BEGIN_SRC common-lisp
 (bitio:bit-read-bits bitio 3 :be)
@@ -481,8 +483,8 @@ and leaves the BITIO stream in this state:
 |-----------+-----------+-----------+------------------|
 | Octet + 0 | Octet + 1 | Octet + 2 | Remaining Octets |
 |-----------+-----------+-----------+------------------|
-| ---10---  | 10101011  | 01001101  | ...              |
-| ---de---  | ijklmnop  | qrstuvwx  | ...              |
+| =---10---= | =10101011= | =01001101= | ...              |
+| =---de---= | =ijklmnop= | =qrstuvwx= | ...              |
 |-----------+-----------+-----------+------------------|
 
 Notice how the d and e bits are left to be read!
@@ -509,8 +511,8 @@ And now the BITIO stream is in this state:
 |-----------+-----------+-----------+------------------|
 | Octet + 0 | Octet + 1 | Octet + 2 | Remaining Octets |
 |-----------+-----------+-----------+------------------|
-| --------  | 1010----  | 01001101  | ...              |
-| --------  | ijkl----  | qrstuvwx  | ...              |
+| =--------= | =1010----= | =01001101= | ...              |
+| =--------= | =ijkl----= | =qrstuvwx= | ...              |
 |-----------+-----------+-----------+------------------|
 
 which simplifies to:
@@ -518,8 +520,8 @@ which simplifies to:
 |-----------+-----------+-----------+------------------|
 | Octet + 0 | Octet + 1 | Octet + 2 | Remaining Octets |
 |-----------+-----------+-----------+------------------|
-| 1010----  | 01001101  | ........  | ...              |
-| ijkl----  | qrstuvwx  | ........  | ...              |
+| =1010----= | =01001101= | ........  | ...              |
+| =ijkl----= | =qrstuvwx= | ........  | ...              |
 |-----------+-----------+-----------+------------------|
 
 One can easily achieve some pretty complex arbitrary bit reads
@@ -607,9 +609,9 @@ First, we show a BITIO stream (with hexadcimal view added):
 |-----------+-----------+-----------+-----------+------------------|
 | Octet + 0 | Octet + 1 | Octet + 2 | Octet + 3 | Remaining Octets |
 |-----------+-----------+-----------+-----------+------------------|
-| #x33      | #xAB      | #x4D      | #xF0      | ........         |
-| 00110011  | 10101011  | 01001101  | 11110000  | ........         |
-| abcdefgh  | ijklmnop  | qrstuvwx  | yzABCDEF  | ........         |
+| =#x33=      | =#xAB=      | =#x4D=      | =#xF0=      | ........         |
+| =00110011=  | =10101011=  | =01001101=  | =11110000=  | ........         |
+| =abcdefgh=  | =ijklmnop=  | =qrstuvwx=  | =yzABCDEF=  | ........         |
 |-----------+-----------+-----------+-----------+------------------|
 
 Then, we perform this call:
