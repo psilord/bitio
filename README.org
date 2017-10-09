@@ -433,5 +433,5 @@ TODO
 TODO
 ** API Summary
 ** Known Bugs & Omissions
-There is no equivalent for WITH-OPEN-FILE for bitio yet.
-You cannot CLOSE a BITIO yet.
++ There is no equivalent for WITH-OPEN-FILE for bitio yet.
++ You cannot CLOSE a BITIO yet.
