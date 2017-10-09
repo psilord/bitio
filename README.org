@@ -270,7 +270,7 @@ Then, we call this function:
 #+END_SRC
 
 Then, for EACH bit of the 5 bits, we strip one bit from the MSBit
-side of the Octet + 0 otet, and shift them into canonical form.
+side of the Octet + 0 octet, and shift them into canonical form.
 
 We first read the a bit, then the b bit, then the c bit, and so
 on with d, and e. Each bit goes into the 2^{0} position of the
