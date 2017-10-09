@@ -674,7 +674,7 @@ CL-USER> (ldb (byte 32 0) -263345357)
 4031621939 (32 bits, #xF04DAB33)
 #+END_EXAMPLE
 
-Which allows us to recover the original unsigned integer (before
+which allows us to recover the original unsigned integer (before
 processing as a signed value) after reading it from the octet
 stream.
 
