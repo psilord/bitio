@@ -81,7 +81,7 @@ The ordering aspect arises in that we can only append/take bits
 from the MSBit or the LSBit side of the bit set in canonical
 form. We cannot take any bits from the middle.
 
-** Octet Stream Source for Bits
+** Octet Stream Source for Bits: Function ~MAKE-BITIO~
 BITIO is a stream that explicity wraps another stream. Let's call
 this other stream S. S *must* have the type (UNSIGNED-BYTE 8) and
 hence will supply 8-bit unsigned integers.
@@ -216,10 +216,13 @@ To be explicit, this is the mapping of ids to bits in the octet stream:
 | x      |         1 |
 |--------+-----------|
 
-*** Bit Reading
-When reading individual bits from the BITIO stream, we must specify
-the number of bits we must read and *from which side of the canonical
-form* of the octets from which they are read.
+*** Bit Reading: Function ~BIT-READ-BITS~
+When reading individual bits from the BITIO stream, we must
+specify the number of bits we must read and *from which side of
+the canonical form* of the octets from which they are read. The
+bits are returned in a canonical form with the first bit read
+being in the MSBit of the result and the last bit read being in
+the LSBit of the result.
 
 The function to read bits from a BITIO stream is:
 
@@ -523,7 +526,21 @@ One can easily achieve some pretty complex arbitrary bit reads
 from the underlying octet stream with the function
 bit-read-bits.
 
-*** Integer Reading
+*** Integer Reading: Function ~BIT-READ-INTEGER~
+Integers (both signed and unsigned) are interpretations of raw
+bits in a canonical form with certain constraints and using a
+certain structures.
+
+The constraint in question are the parameters under which sign
+extension happens. Sign extension in languages like C are easy
+to perform since there are assembly level operations to perform
+this for each harware sized quantity in which the bit pattern is
+stored. In Common Lisp, with arbitrary sized integers, there is more
+work to accomodate sign extension rules.
+
+The structure in question is the ordering of the multiple bytes
+(here, defined here as M N-bit unsigned chunks). This is the usual
+understanding of *Byte Endianess* with respect to integers.
 
 
 ** Writing to BITIO
