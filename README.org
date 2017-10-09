@@ -624,7 +624,7 @@ and the bytes constituting them need not be 8-bits wide.
 
 Let's do an example of this call:
 
-First, we show a BITIO stream (with hexadcimal view added):
+First, we show a BITIO stream (with hexadecimal view added):
 
 |-----------+-----------+-----------+-----------+------------------|
 | Octet + 0 | Octet + 1 | Octet + 2 | Octet + 3 | Remaining Octets |
