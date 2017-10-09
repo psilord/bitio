@@ -375,6 +375,53 @@ The final returned values are:
 5
 #+END_SRC
 
+Then, the BITIO stream is in this state:
+
+|-----------+-----------+-----------+------------------|
+| Octet + 0 | Octet + 1 | Octet + 2 | Remaining Octets |
+|-----------+-----------+-----------+------------------|
+| 001-----  | 10101011  | 01001101  | ...              |
+| abc-----  | ijklmnop  | qrstuvwx  | ...              |
+|-----------+-----------+-----------+------------------|
+
+Notice carefully, that bits a, b, c are available to be read
+from Octet + 0.
+
+Suppose we read those bits, and a few more with this call:
+#+BEGIN_SRC common-lisp
+(bitio:bit-read-bits bitio 7 :le)
+#+END_SRC
+
+We will read the bits in this order: c, b, a, p, o, n, m and
+put them into the Canonical form of cbaponm.
+
+Then, we return these values:
+#+BEGIN_SRC common-lisp
+#b1001101
+;;cbaponm
+7
+#+END_SRC
+
+which leaves the stream in this state:
+
+|-----------+-----------+-----------+------------------|
+| Octet + 0 | Octet + 1 | Octet + 2 | Remaining Octets |
+|-----------+-----------+-----------+------------------|
+| --------  | 1010----  | 01001101  | ...              |
+| --------  | ijkl----  | qrstuvwx  | ...              |
+|-----------+-----------+-----------+------------------|
+
+which simplifies to:
+
+|-----------+-----------+-----------+------------------|
+| Octet + 0 | Octet + 1 | Octet + 2 | Remaining Octets |
+|-----------+-----------+-----------+------------------|
+| 1010----  | 01001101  | ........  | ...              |
+| ijkl----  | qrstuvwx  | ........  | ...              |
+|-----------+-----------+-----------+------------------|
+**** Mixed Bit Endian Reads
+It is fully possible to intermix bit big endian and bit little
+endian reads.
 
 *** Integer Reading
 ** Writing to BITIO
