@@ -1,9 +1,11 @@
 * BITIO: A Common Lisp library for processing octet streams as bit streams.
 
 This library can currently only provide READING stream of
-bits. Later I'll add WRITING a stream of bits. Under conditions of
-bits that are multiples of 8 when being octet aligned in the
-underlying stream, bitio will have good performance.
+bits. Later I'll add WRITING a stream of bits. Under the conditions
+of reading/writing bits that are multiples of 8 when also being
+octet aligned in the underlying stream, bitio will have good
+performance. It is recommended to use FAST-IO with BITIO, but it is
+not required.
 
 Reading bits as a bit stream is a funny business and requires a bit of
 demonstration (no pun intended) of the edge cases and structural format
