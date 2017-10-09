@@ -81,6 +81,11 @@ The ordering aspect arises in that we can only append/take bits
 from the MSBit or the LSBit side of the bit set in canonical
 form. We cannot take any bits from the middle.
 
+It is usually the case that when inserting bits into the Canonical
+Form, the bits are inserted on the LSBit side of the result and
+shifted left 1 bit for every bit that needs to be inserted into
+the result.
+
 ** Octet Stream Source for Bits: Function ~MAKE-BITIO~
 BITIO is a stream that explicity wraps another stream. Let's call
 this other stream S. S *must* have the type (UNSIGNED-BYTE 8) and
@@ -125,7 +130,7 @@ function:
 which returns a BITIO instance from which 1 or more individual bits
 may be read.
 
- Here is an example using regular CLHS streams:
+Here is an example using regular CLHS streams:
 
 #+BEGIN_SRC common-lisp
 (with-open-file (fin (asdf:system-relative-pathname :bitio "binfile")
