@@ -421,16 +421,106 @@ which simplifies to:
 |-----------+-----------+-----------+------------------|
 **** Mixed Bit Endian Reads
 It is fully possible to intermix bit big endian and bit little
-endian reads.
+endian reads. Let's do an example to see how this works.
+
+First start with the BITIO stream:
+
+|-----------+-----------+-----------+------------------|
+| Octet + 0 | Octet + 1 | Octet + 2 | Remaining Octets |
+|-----------+-----------+-----------+------------------|
+| 00110011  | 10101011  | 01001101  | ...              |
+| abcdefgh  | ijklmnop  | qrstuvwx  | ...              |
+|-----------+-----------+-----------+------------------|
+
+Then, we call this function:
+
+#+BEGIN_SRC common-lisp
+(bitio:bit-read-bits bitio 3 :le)
+#+END_SRC
+
+And get back this result:
+#+BEGIN_SRC common-lisp
+#b110
+;;hgf
+3
+#+END_SRC
+
+leaving the BITIO stream in this configuration:
+
+|-----------+-----------+-----------+------------------|
+| Octet + 0 | Octet + 1 | Octet + 2 | Remaining Octets |
+|-----------+-----------+-----------+------------------|
+| 00110---  | 10101011  | 01001101  | ...              |
+| abcde---  | ijklmnop  | qrstuvwx  | ...              |
+|-----------+-----------+-----------+------------------|
+
+Then, we switch bit endianess and read 3 bits:
+#+BEGIN_SRC common-lisp
+(bitio:bit-read-bits bitio 3 :be)
+#+END_SRC
+
+which returns these values:
+#+BEGIN_SRC common-lisp
+#b001
+;;abc
+3
+#+END_SRC
+
+and leaves the BITIO stream in this state:
+
+|-----------+-----------+-----------+------------------|
+| Octet + 0 | Octet + 1 | Octet + 2 | Remaining Octets |
+|-----------+-----------+-----------+------------------|
+| ---10---  | 10101011  | 01001101  | ...              |
+| ---de---  | ijklmnop  | qrstuvwx  | ...              |
+|-----------+-----------+-----------+------------------|
+
+Notice how the d and e bits are left to be read!
+
+Let's read them in an :le manner and some additional bits too
+and see what happens:
+
+#+BEGIN_SRC common-lisp
+(bitio:bit-read-bits bitio 6 :le)
+#+END_SRC
+
+We read bits in this order: e d p o n m
+
+And this is the result we get back:
+
+#+BEGIN_SRC common-lisp
+#b011101
+;;edponm
+6
+#+END_SRC
+
+And now the BITIO stream is in this state:
+
+|-----------+-----------+-----------+------------------|
+| Octet + 0 | Octet + 1 | Octet + 2 | Remaining Octets |
+|-----------+-----------+-----------+------------------|
+| --------  | 1010----  | 01001101  | ...              |
+| --------  | ijkl----  | qrstuvwx  | ...              |
+|-----------+-----------+-----------+------------------|
+
+which simplifies to:
+
+|-----------+-----------+-----------+------------------|
+| Octet + 0 | Octet + 1 | Octet + 2 | Remaining Octets |
+|-----------+-----------+-----------+------------------|
+| 1010----  | 01001101  | ........  | ...              |
+| ijkl----  | qrstuvwx  | ........  | ...              |
+|-----------+-----------+-----------+------------------|
+
+So, any amount of intermixing of raw bit reads of little or
+big endian are allowed.
 
 *** Integer Reading
 ** Writing to BITIO
 Writing bits to the stream is not implemented at this time. It will be
 implemented in a future revision of BITIO.
 *** Bit Writing
-TODO
 *** Integer Writing
-TODO
 ** API Summary
 ** Known Bugs & Omissions
 + There is no equivalent for WITH-OPEN-FILE for bitio yet.
