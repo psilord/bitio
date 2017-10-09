@@ -671,7 +671,9 @@ To get this decimal value: -263345357
 
 Here we write out the code that will read a BITIO wrapped stream
 that is reading a FLAC binary file. The parser is expected to
-read a FRAME_HEADER which is defined here:
+read a FRAME_HEADER which is defined here. A number in the left
+column like <14> means to read 14 bits from the binary stream.
+<4> means read 4 bits, <1> mean read one bit, and so on.
 
 https://xiph.org/flac/format.html#frame_header
 
