@@ -528,20 +528,67 @@ bit-read-bits.
 
 *** Integer Reading: Function ~BIT-READ-INTEGER~
 Integers (both signed and unsigned) are interpretations of raw
-bits in a canonical form with certain constraints and using a
-certain structures.
+bits stored in a canonical form with certain constraints and
+using a certain structures.
 
 The constraint in question are the parameters under which sign
 extension happens. Sign extension in languages like C are easy
 to perform since there are assembly level operations to perform
-this for each harware sized quantity in which the bit pattern is
-stored. In Common Lisp, with arbitrary sized integers, there is more
-work to accomodate sign extension rules.
+this for each hardware sized quantity in which the bit pattern
+is stored. In Common Lisp, with arbitrarily sized integers,
+there is more work to accomodate sign extension rules.
 
 The structure in question is the ordering of the multiple bytes
-(here, defined here as M N-bit unsigned chunks). This is the usual
-understanding of *Byte Endianess* with respect to integers.
+that constitute a multi-part integer (here, defined here as M
+N-bit unsigned chunks). This is the usual understanding of *Byte
+Endianess* with respect to multi-byte integers.
 
+For the purposes of BITIO, the bytes that constitute a single
+integer can be N-bits long, but they must ALL be N-bits
+long. The bit level endianess of those bytes themselves can also
+be little or big, but that setting must be true for ALL bytes
+read on behalf of an integer. Then, all of the bytes can be
+treated as little or big endian in terms of how they are placed
+into the final integer form.
+
+NOTE: To be explicit, the term _byte_ is defined to be an unsigned
+N-bit quantity, as opposed to its traditional definition of an
+unsigned 8-bit quantity.
+
+So, without further ado, we introduce a new function called:
+
+#+BEGIN_SRC common-lisp
+(bitio:bit-read-integer bitio
+                        &key
+                        (bit-endian :be)
+                        (byte-endian :le)
+                        (num-bytes 4)
+                        (byte-width 8)
+                        (unsignedp T))
+
+#+END_SRC
+
+The arguments are:
+
+|-------------+----------------------------------------------|
+| Argument    | Meaning                                      |
+|-------------+----------------------------------------------|
+| BITIO       | A BITIO instance                             |
+|-------------+----------------------------------------------|
+| BIT-ENDIAN  | :BE for big-endian                           |
+|             | :LE for litte-endian                         |
+|             | Indicates bit endianess of all read bytes    |
+|-------------+----------------------------------------------|
+| BYTE-ENDIAN | :BE for big-endian                           |
+|             | :LE for little-endian                        |
+|             | Indicates byte level ordering in the integer |
+|-------------+----------------------------------------------|
+| NUM-BYTES   | How many bytes will be read for this integer |
+|-------------+----------------------------------------------|
+| BYTE-WIDTH  | The bit-width of each byte                   |
+|-------------+----------------------------------------------|
+| UNSIGNEDP   | Should we treat the integer as unsigned      |
+|-------------+----------------------------------------------|
 
 ** Writing to BITIO
 Writing bits to the stream is not implemented at this time. It will be
