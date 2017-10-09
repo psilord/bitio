@@ -727,8 +727,7 @@ the specification in a logical and meaningful manner.
            (let ((trigger (ldb sample-rate (byte 2 2)))
                  (kind (ldb sample-rate (byte 2 0))))
 
-             (when (and (eql #b11 trigger)
-                        (not (eql #b11 kind)))
+             (when (eql #b11 trigger)
                (cond
                  ((eql kind #b00)
                   (bitio:bit-read-integer bitio :num-bytes 1))
