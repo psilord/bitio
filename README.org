@@ -578,6 +578,11 @@ NOTE: To be explicit, the term _byte_ is defined to be an unsigned
 N-bit quantity, as opposed to its traditional definition of an
 unsigned 8-bit quantity.
 
+It is also the case that you can intermix calls that change the
+endianess of either the bytes being read, or the endianess of
+the byte ordering--along with not being octet aligned, and this
+function will do the right thing.
+
 So, without further ado, we introduce a new function called:
 
 #+BEGIN_SRC common-lisp
