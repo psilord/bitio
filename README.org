@@ -512,8 +512,9 @@ which simplifies to:
 | ijkl----  | qrstuvwx  | ........  | ...              |
 |-----------+-----------+-----------+------------------|
 
-So, any amount of intermixing of raw bit reads of little or
-big endian are allowed.
+One can easily achieve some pretty complex arbitrary bit reads
+from the underlying octet stream with the function
+~bit-read-bits~.
 
 *** Integer Reading
 ** Writing to BITIO
