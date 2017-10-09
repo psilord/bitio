@@ -719,7 +719,7 @@ the specification in a logical and meaningful manner.
          (channel-assignment
            (bitio:bit-read-integer bitio :num-bytes 1 :byte-width 4))
          (sample-size-in-bits
-           (bitio:bit-read-integer bitio :numn-bytes 1 :byte-width 3))
+           (bitio:bit-read-integer bitio :num-bytes 1 :byte-width 3))
          (reserved-1
            (bitio:bit-read-bits bitio 1 :be))
          (coded-frame-or-sample
