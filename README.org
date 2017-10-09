@@ -132,12 +132,6 @@ function:
 which returns a BITIO instance from which 1 or more individual bits
 may be read.
 
-NOTE: This function doesn't understand properties of integers. It
-only reads bits from the underlying octet stream. Under certain
-conditions, it is logical to interpret the numbers this function
-returns as unsigned integers, but in general, if you want to read
-integers explicitly, there is a function for that described later.
-
 Here is an example using regular CLHS streams:
 
 #+BEGIN_SRC common-lisp
@@ -245,6 +239,13 @@ The function to read bits from a BITIO stream is:
 (bitio:bit-read-bits bitio bit-read-count bit-endian
                      &optional (eof-error-p T) (eof-value NIL))
 #+END_SRC
+
+NOTE: This function doesn't understand properties of
+integers. It only reads raw bits from the underlying octet
+stream. Under certain conditions, it is meaningsul to interpret
+the numbers this function returns as unsigned integers, but in
+general, if you want to read integers explicitly, there is a
+function for that described later.
 
 The arguments are:
 
