@@ -272,7 +272,7 @@ number of bytes you expected to read.
 
 Now let's be more clear about what the BIT-ENDIAN argument actually
 means when reading the bits.
-**** Big Endian Reads
+**** Bit Big Endian Reads
 Suppose we have wrapped this octet stream:
 
 |-----------+-----------+-----------+------------------|
@@ -352,7 +352,7 @@ which simplifies to:
 | =ijklmnop= | =qrstuvwx= | ......... | ...              |
 |-----------+-----------+-----------+------------------|
 
-**** Little Endian Reads
+**** Bit Little Endian Reads
 In little endian reads, we take individual bits from the LSBit
 side of the octet and corral them into Canonical Form. This can
 result in some non-intuitive bit sets.
