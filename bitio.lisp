@@ -317,7 +317,7 @@ position."
 ;; as a values of the integer and how many bits read. Return a values of
 ;; the bits in canonical order in an integer, and how many bits are in that
 ;; canonical integer.
-(defun bit-read-bits (bitio bit-read-count bit-endian
+(defun read-bits (bitio bit-read-count bit-endian
                       &optional (eof-error-p T) (eof-value NIL))
   "Before describing how this function works, we'll describe the form the
 octets are in from the underlying octet-stream that the BITIO instance
@@ -352,7 +352,7 @@ Then, we read 12 bits in this order: hgfedcbaponm and return the
 values of it and 12 as the bits read. This read consumes the first
 octet starting from the :LE side, then half of the second octet
 starting from the :LE side, leaving the bits 'ijkl' in the second
-octet to be read in the next bit-read-bits call, however you want to
+octet to be read in the next read-bits call, however you want to
 read them, plus any additional bits from additional octet later in the
 stream.
 
@@ -366,7 +366,7 @@ number of bits you expected to read to ensure the value is what you
 expect."
 
   (when (zerop bit-read-count)
-    (return-from bit-read-bits (values 0 0)))
+    (return-from read-bits (values 0 0)))
 
   (cond
     ;; This is a fast path read of the bits.
@@ -389,22 +389,22 @@ expect."
                                          eof-error-p eof-value))))
 
 ;; EXPORT
-(defun bit-read-one-byte (bitio byte-width bit-endian
+(defun read-one-byte (bitio byte-width bit-endian
                       &optional (eof-error-p T) (eof-value NIL))
   "Read a single unsigned 'byte' from the bitio stream. You must
-specify the BIT-ENDIAN mode (:BE or :LE, See BIT-READ-BITS) and how
+specify the BIT-ENDIAN mode (:BE or :LE, See READ-BITS) and how
 big the byte is in bits: BYTE-WIDTH. You can supply the optional
 keywords EOF-ERROR-P and EOF-VALUE as in READ-BYTE). The returned
 value is always unsigned. If the number of bits requested is more than
 is in the stream, you will get a short read of bits, so it is
 recommended to check the return value to ensure you got the number of
 bits you expected."
-  (bit-read-bits bitio byte-width bit-endian eof-error-p eof-value))
+  (read-bits bitio byte-width bit-endian eof-error-p eof-value))
 
 ;; EXPORT
 ;; TODO: Check what happens when short read ends in a partially available byte,
 ;; what is the right action to do in that case?
-(defun bit-read-bytes (bitio seq bit-endian byte-width
+(defun read-bytes (bitio seq bit-endian byte-width
                        &key (start 0) end)
   "This reads UNSIGNED 'bytes' into SEQ given :START and :END keywords.
 The default span is the entire sequence. BIT-ENDIAN is how the
@@ -418,9 +418,9 @@ the unsigned byte as defined in the function call arguments."
   (let ((end (if (null end) (length seq) end)))
     (loop :for num-read :from 0
           :for i :from start :below end
-          :for the-byte = (bit-read-bits bitio byte-width bit-endian NIL :eof)
+          :for the-byte = (read-bits bitio byte-width bit-endian NIL :eof)
           :do (when (equal the-byte :eof)
-                (return-from bit-read-bytes num-read))
+                (return-from read-bytes num-read))
               (incf num-read)
               (setf (aref seq i) the-byte)))
   (length seq))
@@ -432,9 +432,9 @@ the unsigned byte as defined in the function call arguments."
           potential-signed-value))
 
 ;; EXPORT
-;; This thing interprets bits read by bit-read-bits as a signed or unsigned
+;; This thing interprets bits read by read-bits as a signed or unsigned
 ;; integer as appropriate.
-(defun bit-read-integer (bitio
+(defun read-integer (bitio
                          &key
                            ;; next one is passed to bit-read.
                            (bit-endian :be)
@@ -450,7 +450,7 @@ the unsigned byte as defined in the function call arguments."
 BYTE-WIDTH and BIT-ENDIAN. BYTE-WIDTH indicates how many bits are in
 the byte and it defaults to 8. BIT-ENDIAN defines how to read those
 bits from the octet stream. It defaults to :BE (big endian), See
-BIT-READ-BITS for further explanation.  After the bytes are read, they
+READ-BITS for further explanation.  After the bytes are read, they
 are arranged according to BYTE-ENDIAN in the traditional meaning of
 multi-byte integers and that defaults to :LE.  Then depending
 on UNSIGNEDP, defaulting to T, the value is either returned unsigned
@@ -463,11 +463,11 @@ number."
     (ecase byte-endian
       (:be (loop
              :for i :from (* (1- num-bytes) byte-width) :downto 0 :by byte-width
-             :for byte = (bit-read-bits bitio byte-width bit-endian)
+             :for byte = (read-bits bitio byte-width bit-endian)
              :do (setf (ldb (byte byte-width i) value) byte)))
       (:le (loop
              :for i :below (* byte-width num-bytes) :by byte-width
-             :for byte = (bit-read-bits bitio byte-width bit-endian)
+             :for byte = (read-bits bitio byte-width bit-endian)
              :do (setf (ldb (byte byte-width i) value) byte))))
     (if unsignedp
         value
@@ -475,7 +475,7 @@ number."
 
 
 ;; EXPORT
-(defun bit-octet-read-boundary-p (bitio)
+(defun octet-read-boundary-p (bitio)
   "Return T if the reading of the bit stream is at an octet boundary.
 NIL otherwise. If at EOF, return T, since techically, it is a boundary."
   (zerop (num-bits-in-stable bitio)))

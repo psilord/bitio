@@ -4,10 +4,10 @@
   (:use #:cl)
   (:export #:bitio
            #:make-bitio
-           #:bit-read-bits
-           #:bit-read-one-byte
-           #:bit-read-bytes
-           #:bit-read-integer
-           #:bit-octet-read-boundary-p))
+           #:read-bits
+           #:read-one-byte
+           #:read-bytes
+           #:read-integer
+           #:octet-read-boundary-p))
 
 (in-package #:bitio)

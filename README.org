@@ -38,14 +38,14 @@ quick example with no explanation about how it works, only what it does.
                      :if-does-not-exist :error)
   ;; wrap fin stream with a bitio stream.
   (let ((bitio (make-bitio fin #'read-byte)))
-    (let ((32-bits (bitio:bit-read-integer bitio :unsignedp NIL))
-          (16-bits (bitio:bit-read-integer bitio :num-bytes 2 :byte-endian :be
+    (let ((32-bits (bitio:read-integer bitio :unsignedp NIL))
+          (16-bits (bitio:read-integer bitio :num-bytes 2 :byte-endian :be
                                                  :unsignedp NIL))
-          (3-bits (bitio:bit-read-integer bitio :num-bytes 1 :byte-width 3))
-          (8-bits (bitio:bit-read-integer bitio :num-bytes 1))
-          (5-bits (bitio:bit-read-integer bitio :num-bytes 1 :byte-width 5))
+          (3-bits (bitio:read-integer bitio :num-bytes 1 :byte-width 3))
+          (8-bits (bitio:read-integer bitio :num-bytes 1))
+          (5-bits (bitio:read-integer bitio :num-bytes 1 :byte-width 5))
           (seq (make-array 8-bit :element-type '(unsigned-byte 8)))
-          (num-read (bitio:bit-read-bytes bitio seq :be 8)))
+          (num-read (bitio:read-bytes bitio seq :be 8)))
 
       (format t "Do something with the read data values....~%")
 
@@ -224,7 +224,7 @@ To be explicit, this is the mapping of ids to bits in the octet stream:
 | =x=    |         =1= |
 |--------+-----------|
 
-*** Bit Reading: Function ~BIT-READ-BITS~
+*** Bit Reading: Function ~READ-BITS~
 When reading individual bits from the BITIO stream, we must
 specify the number of bits we must read and *from which side of
 the canonical form* of the octets from which they are read. The
@@ -236,7 +236,7 @@ The function to read bits from a BITIO stream is:
 
 #+BEGIN_SRC common-lisp
 ;; Read N bits from the BITIO stream.
-(bitio:bit-read-bits bitio bit-read-count bit-endian
+(bitio:read-bits bitio bit-read-count bit-endian
                      &optional (eof-error-p T) (eof-value NIL))
 #+END_SRC
 
@@ -285,7 +285,7 @@ Suppose we have wrapped this octet stream:
 Then, we call this function:
 
 #+BEGIN_SRC common-lisp
-(bitio:bit-read-bits bitio 5 :be)
+(bitio:read-bits bitio 5 :be)
 #+END_SRC
 
 Then, for EACH bit of the 5 bits, we strip one bit from the MSBit
@@ -321,7 +321,7 @@ reading.
 Suppose we continue reading 3 more bits with :be setting:
 
 #+BEGIN_SRC common-lisp
-(bitio:bit-read-bits bitio 3 :be)
+(bitio:read-bits bitio 3 :be)
 #+END_SRC
 
 We'll read f first, then g, then h. f goes into the 2^{0} part of
@@ -369,7 +369,7 @@ Let's start with the original BITIO stream:
 Then, we call this function:
 
 #+BEGIN_SRC common-lisp
-(bitio:bit-read-bits bitio 5 :le)
+(bitio:read-bits bitio 5 :le)
 #+END_SRC
 
 Here, we read the individual bits from the LSBit side of Octet + 0
@@ -410,7 +410,7 @@ from Octet + 0.
 Suppose we read those bits, and a few more with this call:
 
 #+BEGIN_SRC common-lisp
-(bitio:bit-read-bits bitio 7 :le)
+(bitio:read-bits bitio 7 :le)
 #+END_SRC
 
 We will read the bits in this order: c, b, a, p, o, n, m and
@@ -457,7 +457,7 @@ First start with the BITIO stream:
 Then, we call this function:
 
 #+BEGIN_SRC common-lisp
-(bitio:bit-read-bits bitio 3 :le)
+(bitio:read-bits bitio 3 :le)
 #+END_SRC
 
 And get back these results:
@@ -482,7 +482,7 @@ bits are read from the MSBit side of the Octet + 0 value,
 so, starting at bit a.
 
 #+BEGIN_SRC common-lisp
-(bitio:bit-read-bits bitio 3 :be)
+(bitio:read-bits bitio 3 :be)
 #+END_SRC
 
 which returns these values:
@@ -508,7 +508,7 @@ Let's read them in an :le manner and some additional bits too
 and see what happens:
 
 #+BEGIN_SRC common-lisp
-(bitio:bit-read-bits bitio 6 :le)
+(bitio:read-bits bitio 6 :le)
 #+END_SRC
 
 We read bits in this order: e d p o n m
@@ -541,9 +541,9 @@ which simplifies to:
 
 One can easily achieve some pretty complex arbitrary bit reads
 from the underlying octet stream with the function
-bit-read-bits.
+read-bits.
 
-*** Integer Reading: Function ~BIT-READ-INTEGER~
+*** Integer Reading: Function ~READ-INTEGER~
 Integers (both signed and unsigned) are interpretations of raw
 bits stored in a canonical form with certain constraints and
 in a certain structure.
@@ -586,7 +586,7 @@ function will do the right thing.
 So, without further ado, we introduce a new function called:
 
 #+BEGIN_SRC common-lisp
-(bitio:bit-read-integer bitio
+(bitio:read-integer bitio
                         &key
                         (bit-endian :be)
                         (byte-endian :le)
@@ -637,7 +637,7 @@ First, we show a BITIO stream (with hexadecimal view added):
 Then, we perform this call:
 
 #+BEGIN_SRC common-lisp
-(bitio:bit-read-integer bitio :unsignedp NIL)
+(bitio:read-integer bitio :unsignedp NIL)
 #+END_SRC
 
 Here is what happens. This descripton is semantically what happens,
@@ -678,7 +678,7 @@ which allows us to recover the original unsigned integer (before
 processing as a signed value) after reading it from the octet
 stream.
 
-*** Extended example with ~bit-read-integer~
+*** Extended example with ~read-integer~
 
 Here we write out the code that will read a BITIO wrapped stream
 that is reading a FLAC binary file. The parser is expected to
@@ -689,7 +689,7 @@ column like <14> means to read 14 bits from the binary stream.
 https://xiph.org/flac/format.html#frame_header
 
 NOTE: All numbers are in big-endian format in FLAC unless
-otherwise noted. Even though bitio:bit-read-integer defaults
+otherwise noted. Even though bitio:read-integer defaults
 to :le for byte-endian, it only matters if reading more than 1
 byte to create the integer. So, in those places we manually
 specify the ordering.
@@ -707,21 +707,21 @@ the specification in a logical and meaningful manner.
 (defun parse-frame-header (bitio)
   "Parse a FRAME_HEADER and return a structure with that information in it."
   (let* ((sync-code
-           (bitio:bit-read-bits bitio 14 :be))
+           (bitio:read-bits bitio 14 :be))
          (reserved-0
-           (bitio:bit-read-bits bitio 1 :be))
+           (bitio:read-bits bitio 1 :be))
          (blocking-strategy
-           (bitio:bit-read-bits bitio 1 :be))
+           (bitio:read-bits bitio 1 :be))
          (inter-channel-block-size
-           (bitio:bit-read-integer bitio :num-bytes 1 :byte-width 4))
+           (bitio:read-integer bitio :num-bytes 1 :byte-width 4))
          (sample-rate
-           (bitio:bit-read-integer bitio :num-bytes 1 :byte-width 4))
+           (bitio:read-integer bitio :num-bytes 1 :byte-width 4))
          (channel-assignment
-           (bitio:bit-read-integer bitio :num-bytes 1 :byte-width 4))
+           (bitio:read-integer bitio :num-bytes 1 :byte-width 4))
          (sample-size-in-bits
-           (bitio:bit-read-integer bitio :num-bytes 1 :byte-width 3))
+           (bitio:read-integer bitio :num-bytes 1 :byte-width 3))
          (reserved-1
-           (bitio:bit-read-bits bitio 1 :be))
+           (bitio:read-bits bitio 1 :be))
          (coded-frame-or-sample
            (if (eql blocking-strategy 1)
                ;; variable blocksize
@@ -731,8 +731,8 @@ the specification in a logical and meaningful manner.
          (blocksize-value
            (when (eql #b011 (ldb (byte 3 1) inter-channel-block-size))
              (if (zerop (ldb (byte 1 0) inter-channel-block-size))
-                 (bitio:bit-read-integer :num-bytes 1)
-                 (bitio:bit-read-integer :num-bytes 2
+                 (bitio:read-integer :num-bytes 1)
+                 (bitio:read-integer :num-bytes 2
                                          :byte-endian :be))))
          (sample-rate-value
            (let ((trigger (ldb (byte 2 2) sample-rate))
@@ -741,18 +741,18 @@ the specification in a logical and meaningful manner.
              (when (eql #b11 trigger)
                (cond
                  ((eql kind #b00)
-                  (bitio:bit-read-integer bitio :num-bytes 1))
+                  (bitio:read-integer bitio :num-bytes 1))
                  ((eql kind #b01)
-                  (bitio:bit-read-integer bitio :num-bytes 2
+                  (bitio:read-integer bitio :num-bytes 2
                                                 :byte-endian :be))
                  ((eql kind #b10)
-                  (* 10 (bitio:bit-read-integer bitio
+                  (* 10 (bitio:read-integer bitio
                                                 :num-bytes 2
                                                 :byte-endian :be)))
                  ((eql kind #b11)
                   (error
                    "invalid parse of frame-header: mimic sync code"))))))
-         (crc-8 (bitio:bit-read-integer bitio :num-bytes 1)))
+         (crc-8 (bitio:read-integer bitio :num-bytes 1)))
 
     (unless (eql sync-code #b11111111111110)
       (error "invalid parse of frame-header: bad sync code"))
@@ -769,7 +769,7 @@ the specification in a logical and meaningful manner.
                        crc-8)))
 
 (defun parse-utf8 (bitio num-bits)
-  (let ((bit-set (bitio:bit-read-bits bitio num-bits :be)))
+  (let ((bit-set (bitio:read-bits bitio num-bits :be)))
     ;; Next function defined elsewhere.
     (convert-to-utf8 bit-set)))
 #+END_SRC
@@ -786,11 +786,11 @@ implemented in a future revision of BITIO.
 ** API Summary
 *** Type BITIO
 *** Function MAKE-BITIO
-*** Function BIT-READ-BITS
-*** Function BIT-READ-ONE-BYTE
-*** Function BIT-READ-BYTES
-*** Function BIT-READ-INTEGER
-*** Function BIT-OCTET-READ-BOUNDARY-P
+*** Function READ-BITS
+*** Function READ-ONE-BYTE
+*** Function READ-BYTES
+*** Function READ-INTEGER
+*** Function OCTET-READ-BOUNDARY-P
 ** Known Bugs & Omissions
 + There is no equivalent for WITH-OPEN-FILE for BITIO yet.
 + You cannot CLOSE a BITIO yet.
