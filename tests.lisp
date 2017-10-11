@@ -33,13 +33,13 @@
         (assert (and (equalp expected-value value)
                      (eql expected-bits-to-have-been-read bit-read-count))))))
 
-(defun test-bit-read-byte (bitio byte-width bit-endian expected-value
+(defun test-bit-read-one-byte (bitio byte-width bit-endian expected-value
                            &optional
                              (expected-bits-to-have-been-read byte-width)
                              (eof-error-p T)
                              (eof-value NIL))
   (multiple-value-bind (value bit-read-count)
-      (bit-read-byte bitio byte-width bit-endian eof-error-p eof-value)
+      (bit-read-one-byte bitio byte-width bit-endian eof-error-p eof-value)
     (dbgval value (format nil "~D bits ~(~S~) should be #x~X"
                           byte-width bit-endian expected-value))
 
@@ -244,21 +244,21 @@
 
         ))
 
-    (format t "Case: bit-read-byte, bit-endian: :be, 8 bits wide~%")
+    (format t "Case: bit-read-one-byte, bit-endian: :be, 8 bits wide~%")
     (fast-io:with-fast-input (fiobuf octet-vector)
       (let ((bitio (make-bitio fiobuf #'fast-io:fast-read-byte)))
         ;; Consume 1 octet as 1 byte.
-        (test-bit-read-byte bitio 8 :be #x5c)
+        (test-bit-read-one-byte bitio 8 :be #x5c)
 
         ))
 
-    (format t "Case: bit-read-byte, bit-endian: :be, 12 bits wide~%")
+    (format t "Case: bit-read-one-byte, bit-endian: :be, 12 bits wide~%")
     (fast-io:with-fast-input (fiobuf octet-vector)
       (let ((bitio (make-bitio fiobuf #'fast-io:fast-read-byte)))
         ;; Consume 1.5 octets, as 1 byte
-        (test-bit-read-byte bitio 12 :be #x5cf)
+        (test-bit-read-one-byte bitio 12 :be #x5cf)
         ;; Consume 1.5 octets, as 1 byte
-        (test-bit-read-byte bitio 12 :be #x6ee)
+        (test-bit-read-one-byte bitio 12 :be #x6ee)
 
         ))
 
@@ -267,9 +267,9 @@
     (fast-io:with-fast-input (fiobuf octet-vector)
       (let ((bitio (make-bitio fiobuf #'fast-io:fast-read-byte)))
         ;; Consume 1.5 octets, as 1 byte
-        (test-bit-read-byte bitio 12 :le #x3a6)
+        (test-bit-read-one-byte bitio 12 :le #x3a6)
         ;; Consume 1.5 octets, as 1 byte
-        (test-bit-read-byte bitio 12 :le #xf77)
+        (test-bit-read-one-byte bitio 12 :le #xf77)
 
         ))
 

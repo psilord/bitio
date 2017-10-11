@@ -389,7 +389,7 @@ expect."
                                          eof-error-p eof-value))))
 
 ;; EXPORT
-(defun bit-read-byte (bitio byte-width bit-endian
+(defun bit-read-one-byte (bitio byte-width bit-endian
                       &optional (eof-error-p T) (eof-value NIL))
   "Read a single unsigned 'byte' from the bitio stream. You must
 specify the BIT-ENDIAN mode (:BE or :LE, See BIT-READ-BITS) and how

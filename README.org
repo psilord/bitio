@@ -787,7 +787,7 @@ implemented in a future revision of BITIO.
 *** Type BITIO
 *** Function MAKE-BITIO
 *** Function BIT-READ-BITS
-*** Function BIT-READ-BYTE
+*** Function BIT-READ-ONE-BYTE
 *** Function BIT-READ-BYTES
 *** Function BIT-READ-INTEGER
 *** Function BIT-OCTET-READ-BOUNDARY-P
