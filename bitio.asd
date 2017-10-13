@@ -2,12 +2,9 @@
 ;;
 ;; Licensed under MIT License found in the LICENSE file.
 
-(defpackage #:bitio-asd
-  (:use :cl :asdf))
+(in-package :cl-user)
 
-(in-package #:bitio-asd)
-
-(defsystem #:bitio
+(asdf:defsystem #:bitio
   :description "A wrapper for octet streams that enable bit level streams."
   :version "0.1"
   :author "Peter Keller <psilord@cs.wisc.edu>"
