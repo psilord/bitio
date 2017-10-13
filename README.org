@@ -155,9 +155,7 @@ Here is an example of wrapping a FAST-IO stream for a file:
                      :direction :input
                      :element-type '(unsigned-byte 8)
                      :if-does-not-exist :error)
-  (fast-io:with-fast-input (fin-fast
-                            (make-array 0 :element-type '(unsigned-byte 8))
-                            fin)
+  (fast-io:with-fast-input (fin-fast nil fin)
     ;; wrap fin stream with a bitio stream. Notice we pass the appropriate
     ;; unsigned 8-bit reader function for this stream type.
     (let ((bitio (make-bitio fin-fast #'fast-io:fast-read-byte)))
