@@ -8,7 +8,6 @@
   (format t ": #x~X (#b~B)~%" val val)
   (finish-output))
 
-
 (defun make-octet-vector ()
   (make-array 10 :element-type '(unsigned-byte 8)
                  :initial-contents '(#x5c
@@ -22,7 +21,10 @@
                              (eof-error-p T)
                              (eof-value NIL))
   (multiple-value-bind (value bit-read-count)
-      (read-bits bitio num-bits-to-read bit-endian eof-error-p eof-value)
+      (read-bits bitio num-bits-to-read
+                 :bit-endian bit-endian
+                 :eof-error-p eof-error-p
+                 :eof-value eof-value)
     (dbgval value (format nil "~D bits ~(~S~) should be #x~X"
                           num-bits-to-read bit-endian expected-value))
 
@@ -39,7 +41,11 @@
                              (eof-error-p T)
                              (eof-value NIL))
   (multiple-value-bind (value bit-read-count)
-      (read-one-byte bitio byte-width bit-endian eof-error-p eof-value)
+      (read-one-byte bitio
+                     :byte-width byte-width
+                     :bit-endian bit-endian
+                     :eof-error-p eof-error-p
+                     :eof-value eof-value)
     (dbgval value (format nil "~D bits ~(~S~) should be #x~X"
                           byte-width bit-endian expected-value))
 
@@ -71,11 +77,14 @@
 
 ;; Note "byte" doesn't necessarily mean 8 bit octets!
 (defun test-read-bytes (bitio seq bit-endian byte-width
-                            expected-seq &key (start 0) end)
+                        expected-seq &key (start 0) end)
 
-  (let ((num-parts-read (read-bytes
-                         bitio seq bit-endian byte-width
-                         :start start :end end)))
+  (let ((num-parts-read (read-bytes bitio
+                                    seq
+                                    :bit-endian bit-endian
+                                    :byte-width byte-width
+                                    :start start
+                                    :end end)))
     (let ((*print-right-margin* 9999))
       (format t "seq(byte-width: ~A, bit-endian: ~A, seq ~X [start: ~A, end: ~A]) should be ~X~%"
               byte-width bit-endian seq start end expected-seq))
