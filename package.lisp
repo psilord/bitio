@@ -1,5 +1,7 @@
 ;; Licensed under the MIT License found in the file named LICENSE.
 
+(in-package :cl-user)
+
 (defpackage #:bitio
   (:use #:cl)
   (:export #:bitio
