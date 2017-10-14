@@ -2,8 +2,6 @@
 ;;
 ;; Licensed under MIT License found in the LICENSE file.
 
-(in-package :cl-user)
-
 (asdf:defsystem #:bitio
   :description "A wrapper for octet streams that enable bit level streams."
   :version "0.1"
@@ -13,7 +11,7 @@
   :serial t
   :depends-on (#:fast-io)
   :components ((:file "package")
-	       (:file "utils")
-               (:file "bitio")
-	       (:file "bitio-read")
-	       (:file "tests")))
+           (:file "utils")
+           (:file "bitio")
+           (:file "bitio-read")
+           (:file "tests")))
