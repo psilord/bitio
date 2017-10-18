@@ -393,6 +393,8 @@ the unsigned byte as defined in the function call arguments."
        num-octets-read)
 
       (t
+       ;; This could be optimized in certain cases to use a sequence read.
+       ;; But that work hasn't been done yet. So this path still can be slow.
        (loop :for num-read :from 0
              :for i :from start :below end
              :for the-byte = (read-bits bitio bits-per-byte
