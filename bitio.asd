@@ -6,7 +6,7 @@
   :description "A wrapper for octet streams that enable bit level streams."
   :version "0.1"
   :author "Peter Keller <psilord@cs.wisc.edu>"
-  :license "Apache License"
+  :license "MIT License"
 
   :serial t
   :depends-on (#:fast-io)
