@@ -65,7 +65,7 @@ position."
            ;; place the bit endian manipulated octets into the right place in
            ;; the value
            (loop :for i :below octets-read
-                 :do (setf (ldb (byte 8 (- (* (1- required-octets) 8)
+                 :do (setf (ldb (byte 8 (- (* (1- original-required-octets) 8)
                                            (* (+ num-octets-read i) 8)))
                                 value)
                            (funcall endian-func
@@ -91,7 +91,6 @@ position."
 
            (setf num-octets-to-read (min required-octets
                                          (length (octet-read-buffer bitio))))))
-
 
     (values value (* num-octets-read 8))))
 
@@ -348,32 +347,50 @@ conditions, a short read will happen for the last element read (and
 there is no notification of this) or the function will return 0.
 NOTE: This function is similar to CL's READ-SEQUENCE except it only will read
 the unsigned byte as defined in the function call arguments."
-  (let ((end (if (null end) (length seq) end))
-        (bit-endian (or bit-endian (default-bit-endian bitio)))
-        (bits-per-byte (or bits-per-byte (default-bits-per-byte bitio))))
+  (let* ((end (if (null end) (length seq) end))
+         (bit-endian (or bit-endian (default-bit-endian bitio)))
+         (bits-per-byte (or bits-per-byte (default-bits-per-byte bitio)))
+         (total-octets-to-read (- end start))
+         (required-octets total-octets-to-read)
+         (num-octets-to-read (min total-octets-to-read
+                                  (length (octet-read-buffer bitio))))
+         (num-octets-read 0))
 
     (cond
       ((and (octet-read-boundary-p bitio) (= bits-per-byte 8))
        ;; Very fast path: reading exactly octets into an array
-       ;; TODO: There is a bug here, I need to loop this when the user's
-       ;; sequence and octet read is larger than bitio's octet-read-buffer.
-       (let ((octets-read (funcall (%bitio/read-sequence bitio)
-                                   (octet-read-buffer bitio)
-                                   (octet-stream bitio)
-                                   :start 0 :end (- end start))))
+       (loop
+         :while (> num-octets-to-read 0)
+         :do
+            (let ((octets-read (funcall (%bitio/read-sequence bitio)
+                                        (octet-read-buffer bitio)
+                                        (octet-stream bitio)
+                                        :start 0 :end num-octets-to-read)))
 
-         ;; Fix up endianess, if needed
-         (when (eq bit-endian :le)
-           (loop :for i :below octets-read
-                 :do (setf (aref (octet-read-buffer bitio) i)
-                           (octet-reverse (aref (octet-read-buffer bitio) i)))))
+              ;; Fix up endianess, if needed
+              (when (eq bit-endian :le)
+                (loop :for i :below octets-read
+                      :do (setf (aref (octet-read-buffer bitio) i)
+                                (octet-reverse (aref (octet-read-buffer bitio)
+                                                     i)))))
 
-         ;; copy into user's sequence
-         (loop :for i :below (- end start)
-               :do (setf (aref seq (+ start i))
-                         (aref (octet-read-buffer bitio) i)))
+              ;; copy into user's sequence
+              (loop :for i :below octets-read
+                    :do (setf (aref seq (+ start num-octets-read i))
+                              (aref (octet-read-buffer bitio) i)))
 
-         octets-read))
+              (incf num-octets-read octets-read)
+              (decf required-octets octets-read)
+
+              ;; short read, near eof
+              (when (/= octets-read num-octets-to-read)
+                (return-from read-bytes num-octets-read))
+
+              (setf num-octets-to-read
+                    (min required-octets
+                         (length (octet-read-buffer bitio))))))
+
+       num-octets-read)
 
       (t
        (loop :for num-read :from 0
