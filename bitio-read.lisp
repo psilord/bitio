@@ -33,7 +33,6 @@ wasn't (due to an EOF)."
              (read-bit-stable bitio) result)
        T))))
 
-;; This is not entirely a fast-path since it doesn't read a sequence.
 (defun fast-path/octet-aligned-bit-read (bitio bit-read-count bit-endian
                                          &optional (eof-error-p T)
                                            (eof-value NIL))
@@ -46,34 +45,55 @@ position."
   (when (zerop bit-read-count)
     (return-from fast-path/octet-aligned-bit-read (values 0 0)))
 
-  (let ((required-octets (/ bit-read-count 8))
-        (value 0)
-        (num-bits-read 0)
-        (endian-func (if (eq bit-endian :be) #'identity #'octet-reverse)))
+  (let* ((original-required-octets (/ bit-read-count 8))
+         (required-octets original-required-octets)
+         (value 0)
+         (num-octets-read 0)
+         (num-octets-to-read
+           (min required-octets (length (octet-read-buffer bitio))))
+         (endian-func (if (eq bit-endian :be) #'identity #'octet-reverse)))
 
-    (loop :for i :below required-octets
-          :for octet = (bitio/read-octet bitio eof-error-p eof-value)
-          :do
-             ;; If we hit an eof, we may have collected some data
-             ;; already into a value. In this case, we'll return a
-             ;; short read. The user should check the bit-read-count
-             ;; to ensure they got everything they were expecting.
-             (when (and (not eof-error-p) (equal octet eof-value))
-               (return-from fast-path/octet-aligned-bit-read
-                 (values (if (> num-bits-read 0)
-                             ;; Shift into canonical form to remove
-                             ;; unreadable bits.
-                             (ash value (- (- bit-read-count num-bits-read)))
-                             ;; But if they insist upon the read again, they
-                             ;; get the eof-value they supplied.
-                             eof-value)
-                         num-bits-read)))
+    (loop
+      :while (> num-octets-to-read 0)
+      :do
+         ;; use a fast read-sequence to get the octet into the backing buffer.
+         (let ((octets-read (funcall (%bitio/read-sequence bitio)
+                                     (octet-read-buffer bitio)
+                                     (octet-stream bitio)
+                                     :start 0 :end num-octets-to-read)))
 
-             ;; Otherwise we know we can collect the bits.
-             (incf num-bits-read 8)
-             (setf (ldb (byte 8 (- (* (1- required-octets) 8) (* i 8))) value)
-                   (funcall endian-func octet)))
-    (values value num-bits-read)))
+           ;; place the bit endian manipulated octets into the right place in
+           ;; the value
+           (loop :for i :below octets-read
+                 :do (setf (ldb (byte 8 (- (* (1- required-octets) 8)
+                                           (* (+ num-octets-read i) 8)))
+                                value)
+                           (funcall endian-func
+                                    (aref (octet-read-buffer bitio) i))))
+
+           ;; account for the octets I just read.
+           (decf required-octets octets-read)
+           (incf num-octets-read octets-read)
+
+           ;; If there was a short read, we fixup the value and we're done.
+           (when (/= octets-read num-octets-to-read)
+             ;; short read case, must have hit eof
+             (return-from fast-path/octet-aligned-bit-read
+               (values (if (> num-octets-read 0)
+                           ;; Shift into canonical form to remove
+                           ;; unreadable bits.
+                           (ash value (- (- (* original-required-octets 8)
+                                            (* num-octets-read 8))))
+                           ;; But if they insist upon the read again, they
+                           ;; get the eof-value they supplied.
+                           eof-value)
+                       (* num-octets-read 8))))
+
+           (setf num-octets-to-read (min required-octets
+                                         (length (octet-read-buffer bitio))))))
+
+
+    (values value (* num-octets-read 8))))
 
 
 ;; Return two values:
@@ -331,17 +351,41 @@ the unsigned byte as defined in the function call arguments."
   (let ((end (if (null end) (length seq) end))
         (bit-endian (or bit-endian (default-bit-endian bitio)))
         (byte-width (or byte-width (default-byte-width bitio))))
-    (loop :for num-read :from 0
-          :for i :from start :below end
-          :for the-byte = (read-bits bitio byte-width
-                                     :bit-endian bit-endian
-                                     :eof-error-p NIL
-                                     :eof-value :eof)
-          :do (when (equal the-byte :eof)
-                (return-from read-bytes num-read))
-              (incf num-read)
-              (setf (aref seq i) the-byte)))
-  (length seq))
+
+    (cond
+      ((= byte-width 8)
+       ;; Very fast path: reading exactly octets into an array
+       (let ((octets-read (funcall (%bitio/read-sequence bitio)
+                                   (octet-read-buffer bitio)
+                                   (octet-stream bitio)
+                                   :start 0 :end (- end start))))
+
+         ;; Fix up endianess, if needed
+         (when (eq bit-endian :le)
+           (loop :for i :below octets-read
+                 :do (setf (aref (octet-read-buffer bitio) i)
+                           (octet-reverse (aref (octet-read-buffer bitio) i)))))
+
+         ;; copy into user's sequence
+         (loop :for i :below (- end start)
+               :do (setf (aref seq (+ start i))
+                         (aref (octet-read-buffer bitio) i)))
+
+         octets-read))
+
+      (t
+       (loop :for num-read :from 0
+             :for i :from start :below end
+             :for the-byte = (read-bits bitio byte-width
+                                        :bit-endian bit-endian
+                                        :eof-error-p NIL
+                                        :eof-value :eof)
+             :do (when (equal the-byte :eof)
+                   (return-from read-bytes num-read))
+                 (incf num-read)
+                 (setf (aref seq i) the-byte))
+
+       (length seq)))))
 
 
 (defun sign-extend (potential-signed-value bit-width)

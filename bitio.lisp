@@ -4,6 +4,17 @@
   ((%octet-stream :initarg :octet-stream
                   :initform NIL
                   :reader octet-stream)
+
+   ;; This is used to hold buffered data read using fast sequence operators
+   ;; from the underlying octet. Octets are always written to aref 0 until
+   ;; we reach the end of the required read. Then we read them from aref 0
+   ;; forward until we're done processing them all.
+   (%octet-read-buffer :initarg :octet-read-buffer
+                       :initform (make-array 4096
+                                             :element-type '(unsigned-byte 8)
+                                             :initial-element 0)
+                       :accessor octet-read-buffer)
+
    ;; read-bit-stable is an unsigned integer that holds unprocessed
    ;; bits always in canonical ordering. However, depending on what
    ;; we're doing we might take bits from the MSB side or the LSB
@@ -20,6 +31,9 @@
    (%bitio/read-octet :initarg :bitio/read-octet
                       :initform NIL
                       :reader %bitio/read-octet)
+   (%bitio/read-sequence :initarg :bitio/read-sequence
+                         :initform NIL
+                         :reader %bitio/read-sequence)
    (%default-bit-endian :initarg :default-bit-endian
                         :initform :be
                         :reader default-bit-endian)
@@ -43,15 +57,20 @@ instance the bitio is wrapping."))
 
 
 ;; EXPORT
-(defun make-bitio (octet-stream bitio/read-octet
+(defun make-bitio (octet-stream bitio/read-octet bitio/read-sequence
                    &key (bit-endian :be) (byte-endian :le) (byte-width 8))
-  "OCTET-STREAM must be a stream that is ready to read/write binary octets
-of (unsigned-byte 8) type. BITIO/READ-OCTET is a function associated with
-the OCTET-STREAM that reads a single octet from that stream. Returns an
-instance of a BITIO class."
+  "OCTET-STREAM must be a stream that is ready to read/write binary
+octets of (unsigned-byte 8) type. BITIO/READ-OCTET is a function
+associated with the OCTET-STREAM that reads a single octet from that
+stream.  BITIO/READ-SEQUENCE is a function associated with the octet
+stream that reads a vector of octets. The functions for
+BITIO/READ-OCTET and BITIO/READ-SEQUENCE both expect the same oridnary
+lambda list as CL's READ-BYTE and READ-SEQUENCE, respectively.
+Returns aninstance of a BITIO class."
   (make-instance 'bitio
                  :octet-stream octet-stream
                  :bitio/read-octet bitio/read-octet
+		 :bitio/read-sequence bitio/read-sequence
                  :default-bit-endian bit-endian
                  :default-byte-endian byte-endian
                  :default-byte-width byte-width))

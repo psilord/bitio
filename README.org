@@ -34,7 +34,7 @@ quick example with no explanation about how it works, only what it does.
 (with-open-file (fin (asdf:system-relative-pathname :bitio "binfile")
                      :element-type '(unsigned-byte 8))
   ;; Wrap fin stream with a bitio stream.
-  (let ((bitio (make-bitio fin #'read-byte)))
+  (let ((bitio (make-bitio fin #'read-byte #'read-sequence)))
     (let ((32-bits (bitio:read-integer bitio :unsignedp nil))
           (16-bits (bitio:read-integer bitio :num-bytes 2 :byte-endian :be
                                              :unsignedp nil))
@@ -95,7 +95,9 @@ stream S, as expected.
 
 BITIO is agnostic about the streams it wraps. Upon construction of a BITIO
 instance you must supply the stream being wrapped and the functions for reading
-and writing that are associated with the wrapped stream.
+and writing that are associated with the wrapped stream. These functions
+must have the same ordinary lambda lists as CL's READ-BYTE and
+READ-SEQUENCE, respectively.
 
 A more useful manner to think about the octet stream is that each
 (UNSIGNED-BYTE 8) octet is automatically in a canonical form for an 8-bit
@@ -114,7 +116,7 @@ To wrap a previously created octet stream, one calls this BITIO function:
 
 #+BEGIN_SRC common-lisp
 ;; Wrap an octet stream with a BITIO stream.
-(bitio:make-bitio octet-stream bitio/read-octet &rest initargs)
+(bitio:make-bitio octet-stream bitio/read-octet bitio/read-sequence &rest initargs)
 #+END_SRC
 
 which returns a BITIO instance from which 1 or more individual bits may be read.
@@ -126,27 +128,39 @@ Here is an example using regular CLHS streams:
                      :element-type '(unsigned-byte 8))
   ;; Wrap fin stream with a bitio stream. Pass appropriate function to
   ;; read unsigned 8-bit integers from the stream.
-  (let ((bitio (make-bitio fin #'read-byte)))
+  (let ((bitio (make-bitio fin #'read-byte #'read-sequence)))
     (format t "Read some bits here...~%")))
 #+END_SRC
 
 Here is an example of wrapping a FAST-IO stream for a file:
 
 #+BEGIN_SRC common-lisp
+(defun wrap-fast-read-sequence (vec buf &key (start 0) (end nil))
+  "Must wrap this so it has the same signature as clhs' READ-SEQUENCE."
+  (fast-io:fast-read-sequence vec buf start end))
+
 (with-open-file (fin (asdf:system-relative-pathname :bitio "binfile")
                      :element-type '(unsigned-byte 8))
   (fast-io:with-fast-input (fin-fast nil fin)
     ;; Wrap the fin stream with a bitio stream. Notice we pass the appropriate
     ;; unsigned 8-bit reader function for this stream type.
-    (let ((bitio (make-bitio fin-fast #'fast-io:fast-read-byte)))
+    (let ((bitio (make-bitio fin-fast
+                             #'fast-io:fast-read-byte
+                             #'wrap-fast-read-sequence)))
       (format t "Read some bits here...~%"))))
 #+END_SRC
 
 And last, but not least, here we wrap FAST-IO to read bytes from a buffer:
 
 #+BEGIN_SRC common-lisp
+(defun wrap-fast-read-sequence (vec buf &key (start 0) (end nil))
+  "Must wrap this so it has the same signature as clhs' READ-SEQUENCE."
+  (fast-io:fast-read-sequence vec buf start end))
+
 (fast-io:with-fast-input (fiobuf (vector #xbb #x11 #x0d #x44))
-  (let ((bitio (make-bitio fiobuf #'fast-io:fast-read-byte)))
+  (let ((bitio (make-bitio fiobuf
+                           #'fast-io:fast-read-byte
+                           #'wrap-fast-read-sequence)))
     (format t "Read some bits here...~%")))
 #+END_SRC
 
@@ -725,12 +739,20 @@ implemented in a future revision of BITIO.
 *** Integer Writing
 ** API Summary
 *** Type BITIO
+TBD
 *** Function MAKE-BITIO
+TBD
 *** Function READ-BITS
+TBD
 *** Function READ-ONE-BYTE
+TBD
 *** Function READ-BYTES
+TBD
 *** Function READ-INTEGER
+TBD
 *** Function OCTET-READ-BOUNDARY-P
+TBD
 ** Known Bugs & Omissions
 + There is no equivalent for WITH-OPEN-FILE for BITIO yet.
 + You cannot CLOSE a BITIO yet.
++ You cannot write a bit stream yet.
