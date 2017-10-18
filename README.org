@@ -38,9 +38,9 @@ quick example with no explanation about how it works, only what it does.
     (let ((32-bits (bitio:read-integer bitio :unsignedp nil))
           (16-bits (bitio:read-integer bitio :num-bytes 2 :byte-endian :be
                                              :unsignedp nil))
-          (3-bits (bitio:read-integer bitio :num-bytes 1 :byte-width 3))
+          (3-bits (bitio:read-integer bitio :num-bytes 1 :bits-per-byte 3))
           (8-bits (bitio:read-integer bitio :num-bytes 1))
-          (5-bits (bitio:read-integer bitio :num-bytes 1 :byte-width 5))
+          (5-bits (bitio:read-integer bitio :num-bytes 1 :bits-per-byte 5))
           (seq (make-array 8-bit :element-type '(unsigned-byte 8)))
           (num-read (bitio:read-bytes bitio seq :be 8)))
       (format t "Do something with the read data values....~%"))))
@@ -561,7 +561,7 @@ So, without further ado, we introduce a new function called:
                     (bit-endian :be)
                     (byte-endian :le)
                     (num-bytes 4)
-                    (byte-width 8)
+                    (bits-per-byte 8)
                     (unsignedp T))
 #+END_SRC
 
@@ -582,7 +582,7 @@ The arguments are:
 |-------------+----------------------------------------------|
 | NUM-BYTES   | How many bytes will be read for this integer |
 |-------------+----------------------------------------------|
-| BYTE-WIDTH  | The bit-width of each byte                   |
+| BITS-PER-BYTE  | The bit-width of each byte                   |
 |-------------+----------------------------------------------|
 | UNSIGNEDP   | Should we treat the integer as unsigned      |
 |-------------+----------------------------------------------|
@@ -612,7 +612,7 @@ Then, we perform this call:
 Here is what happens. This description is semantically what happens, but not
 necessarily algorithmically what happens.
 
-+ Since BYTE-WIDTH is 8, _each byte_ is going to be 8 bits long.
++ Since BITS-PER-BYTE is 8, _each byte_ is going to be 8 bits long.
 + Since BIT-ENDIAN is :be, we read the bits in a left to right order for _each
   byte_.
 + Since NUM-BYTES is 4, we read 4 8-bit unsigned values.
@@ -631,7 +631,7 @@ significant byte in the integer:
 
 And then, since UNSIGNEDP is NIL, we convert this unsigned value, using the
 knowledge of the total number of bits we need to represent this number (*
-num-bytes byte-width), and that the MSBit in this integer is 1 which makes it
+num-bytes bits-per-byte), and that the MSBit in this integer is 1 which makes it
 unsigned.
 
 To get this decimal value: -263345357
@@ -675,12 +675,12 @@ manner.
          (reserved-0 (bitio:read-bits bitio 1 :be))
          (blocking-strategy (bitio:read-bits bitio 1 :be))
          (inter-channel-block-size
-           (bitio:read-integer bitio :num-bytes 1 :byte-width 4))
-         (sample-rate (bitio:read-integer bitio :num-bytes 1 :byte-width 4))
+           (bitio:read-integer bitio :num-bytes 1 :bits-per-byte 4))
+         (sample-rate (bitio:read-integer bitio :num-bytes 1 :bits-per-byte 4))
          (channel-assignment
-           (bitio:read-integer bitio :num-bytes 1 :byte-width 4))
+           (bitio:read-integer bitio :num-bytes 1 :bits-per-byte 4))
          (sample-size-in-bits
-           (bitio:read-integer bitio :num-bytes 1 :byte-width 3))
+           (bitio:read-integer bitio :num-bytes 1 :bits-per-byte 3))
          (reserved-1 (bitio:read-bits bitio 1 :be))
          (coded-frame-or-sample
            (if (eql blocking-strategy 1)

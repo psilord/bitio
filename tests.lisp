@@ -46,19 +46,19 @@
         (assert (and (equalp expected-value value)
                      (eql expected-bits-to-have-been-read bit-read-count))))))
 
-(defun test-read-one-byte (bitio byte-width bit-endian expected-value
+(defun test-read-one-byte (bitio bits-per-byte bit-endian expected-value
                            &optional
-                             (expected-bits-to-have-been-read byte-width)
+                             (expected-bits-to-have-been-read bits-per-byte)
                              (eof-error-p T)
                              (eof-value NIL))
   (multiple-value-bind (value bit-read-count)
       (read-one-byte bitio
-                     :byte-width byte-width
+                     :bits-per-byte bits-per-byte
                      :bit-endian bit-endian
                      :eof-error-p eof-error-p
                      :eof-value eof-value)
     (dbgval value (format nil "~D bits ~(~S~) should be #x~X"
-                          byte-width bit-endian expected-value))
+                          bits-per-byte bit-endian expected-value))
 
     (if (and (not eof-error-p) (equal value eof-value))
         ;; In this case, expected value is known to be the eof-value!
@@ -68,16 +68,16 @@
                      (eql expected-bits-to-have-been-read bit-read-count))))))
 
 
-(defun test-read-integer (bitio num-bytes byte-width
+(defun test-read-integer (bitio num-bytes bits-per-byte
                           bit-endian byte-endian unsignedp expected-value)
   (let ((value (read-integer bitio
                              :bit-endian bit-endian
                              :byte-endian byte-endian
                              :num-bytes num-bytes
-                             :byte-width byte-width
+                             :bits-per-byte bits-per-byte
                              :unsignedp unsignedp)))
-    (dbgval value (format nil "read-integer (num-bytes: ~A, byte-width: ~A, bit-endian: ~A, byte-endian: ~A, unsignedp: ~A): [#x~X] should be #x~X"
-                          num-bytes byte-width bit-endian byte-endian unsignedp
+    (dbgval value (format nil "read-integer (num-bytes: ~A, bits-per-byte: ~A, bit-endian: ~A, byte-endian: ~A, unsignedp: ~A): [#x~X] should be #x~X"
+                          num-bytes bits-per-byte bit-endian byte-endian unsignedp
                           value expected-value))
 
     ;; Currently I ignore eof-error-p and eof-value, I need to think about
@@ -87,18 +87,18 @@
 
 
 ;; Note "byte" doesn't necessarily mean 8 bit octets!
-(defun test-read-bytes (bitio seq bit-endian byte-width
+(defun test-read-bytes (bitio seq bit-endian bits-per-byte
                         expected-seq &key (start 0) end)
 
   (let ((num-parts-read (read-bytes bitio
                                     seq
                                     :bit-endian bit-endian
-                                    :byte-width byte-width
+                                    :bits-per-byte bits-per-byte
                                     :start start
                                     :end end)))
     (let ((*print-right-margin* 9999))
-      (format t "seq(byte-width: ~A, bit-endian: ~A, seq ~X [start: ~A, end: ~A]) should be ~X~%"
-              byte-width bit-endian seq start end expected-seq))
+      (format t "seq(bits-per-byte: ~A, bit-endian: ~A, seq ~X [start: ~A, end: ~A]) should be ~X~%"
+              bits-per-byte bit-endian seq start end expected-seq))
 
     (assert (eql (length expected-seq) num-parts-read))
     ;; Check the sequence range we're supposed to have read is ok.

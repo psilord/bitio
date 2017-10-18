@@ -40,9 +40,9 @@
    (%default-byte-endian :initarg :default-byte-endian
                          :initform :le
                          :reader default-byte-endian)
-   (%default-byte-width :initarg :default-byte-width
+   (%default-bits-per-byte :initarg :default-bits-per-byte
                         :initform 8
-                        :reader default-byte-width)))
+                        :reader default-bits-per-byte)))
 
 (defgeneric bitio/read-octet (bitio &optional eof-error-p eof-value)
   (:documentation "Read an octet from the funciton supplied with the stream
@@ -58,7 +58,7 @@ instance the bitio is wrapping."))
 
 ;; EXPORT
 (defun make-bitio (octet-stream bitio/read-octet bitio/read-sequence
-                   &key (bit-endian :be) (byte-endian :le) (byte-width 8))
+                   &key (bit-endian :be) (byte-endian :le) (bits-per-byte 8))
   "OCTET-STREAM must be a stream that is ready to read/write binary
 octets of (unsigned-byte 8) type. BITIO/READ-OCTET is a function
 associated with the OCTET-STREAM that reads a single octet from that
@@ -73,4 +73,4 @@ Returns aninstance of a BITIO class."
 		 :bitio/read-sequence bitio/read-sequence
                  :default-bit-endian bit-endian
                  :default-byte-endian byte-endian
-                 :default-byte-width byte-width))
+                 :default-bits-per-byte bits-per-byte))
