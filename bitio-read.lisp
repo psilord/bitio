@@ -355,6 +355,8 @@ the unsigned byte as defined in the function call arguments."
     (cond
       ((and (octet-read-boundary-p bitio) (= bits-per-byte 8))
        ;; Very fast path: reading exactly octets into an array
+       ;; TODO: There is a bug here, I need to loop this when the user's
+       ;; sequence and octet read is larger than bitio's octet-read-buffer.
        (let ((octets-read (funcall (%bitio/read-sequence bitio)
                                    (octet-read-buffer bitio)
                                    (octet-stream bitio)
