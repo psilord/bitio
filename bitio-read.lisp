@@ -353,7 +353,7 @@ the unsigned byte as defined in the function call arguments."
         (bits-per-byte (or bits-per-byte (default-bits-per-byte bitio))))
 
     (cond
-      ((= bits-per-byte 8)
+      ((and (octet-read-boundary-p bitio) (= bits-per-byte 8))
        ;; Very fast path: reading exactly octets into an array
        (let ((octets-read (funcall (%bitio/read-sequence bitio)
                                    (octet-read-buffer bitio)
