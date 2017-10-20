@@ -8,11 +8,9 @@
    ;; This is used to hold buffered data read using fast sequence operators
    ;; from the underlying octet. Octets are always written to aref 0 until
    ;; we reach the end of the required read. Then we read them from aref 0
-   ;; forward until we're done processing them all.
+   ;; forward until we're done processing them all. The constructor function
+   ;; is responsible for making this.
    (%octet-read-buffer :initarg :octet-read-buffer
-                       :initform (make-array 4096
-                                             :element-type '(unsigned-byte 8)
-                                             :initial-element 0)
                        :accessor octet-read-buffer)
 
    ;; read-bit-stable is an unsigned integer that holds unprocessed
@@ -41,8 +39,8 @@
                          :initform :le
                          :reader default-byte-endian)
    (%default-bits-per-byte :initarg :default-bits-per-byte
-                        :initform 8
-                        :reader default-bits-per-byte)))
+                           :initform 8
+                           :reader default-bits-per-byte)))
 
 (defgeneric bitio/read-octet (bitio &optional eof-error-p eof-value)
   (:documentation "Read an octet from the funciton supplied with the stream
@@ -58,7 +56,8 @@ instance the bitio is wrapping."))
 
 ;; EXPORT
 (defun make-bitio (octet-stream bitio/read-octet bitio/read-sequence
-                   &key (bit-endian :be) (byte-endian :le) (bits-per-byte 8))
+                   &key (bit-endian :be) (byte-endian :le) (bits-per-byte 8)
+                     (octet-read-buffer-size 4096))
   "OCTET-STREAM must be a stream that is ready to read/write binary
 octets of (unsigned-byte 8) type. BITIO/READ-OCTET is a function
 associated with the OCTET-STREAM that reads a single octet from that
@@ -70,7 +69,10 @@ Returns aninstance of a BITIO class."
   (make-instance 'bitio
                  :octet-stream octet-stream
                  :bitio/read-octet bitio/read-octet
-		 :bitio/read-sequence bitio/read-sequence
+                 :bitio/read-sequence bitio/read-sequence
+                 :octet-read-buffer (make-array octet-read-buffer-size
+                                                :element-type '(unsigned-byte 8)
+                                                :initial-element 0)
                  :default-bit-endian bit-endian
                  :default-byte-endian byte-endian
                  :default-bits-per-byte bits-per-byte))

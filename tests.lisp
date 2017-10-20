@@ -8,16 +8,19 @@
   (format t ": #x~X (#b~B)~%" val val)
   (finish-output))
 
-(defun test-make-bitio/fast-io (fiobuf)
+(defun test-make-bitio/fast-io (fiobuf &key (octet-read-buffer-size 4096))
+  (format t "  BITIO has ~A read-buffer size.~%" octet-read-buffer-size)
   (make-bitio fiobuf #'fast-io:fast-read-byte
               ;; canonicalize fast-io's fast-read-sequence to look
               ;; like clhs' read-sequence. They differ in lambda
               ;; lists.
               (lambda (vec buffer &key (start 0) (end nil))
-                (funcall #'fast-io:fast-read-sequence vec buffer start end))))
+                (funcall #'fast-io:fast-read-sequence vec buffer start end))
+              :octet-read-buffer-size octet-read-buffer-size))
 
-(defun test-make-bitio/clhs (fiobuf)
-  (make-bitio fiobuf #'read-byte #'read-sequence))
+(defun test-make-bitio/clhs (fiobuf &key (octet-read-buffer-size 4096))
+  (make-bitio fiobuf #'read-byte #'read-sequence
+              :octet-read-buffer-size octet-read-buffer-size))
 
 (defun make-octet-vector ()
   (make-array 10 :element-type '(unsigned-byte 8)
@@ -36,8 +39,12 @@
                  :bit-endian bit-endian
                  :eof-error-p eof-error-p
                  :eof-value eof-value)
-    (dbgval value (format nil "~D bits ~(~S~) should be #x~X"
-                          num-bits-to-read bit-endian expected-value))
+
+    (format t "  -> Expecting[~D bits]: #x~X~%"
+            num-bits-to-read expected-value)
+
+    (format t "     Actually Read[~D bits, bit ~(~S~)]: #x~X~%"
+            bit-read-count bit-endian value)
 
     (if (and (not eof-error-p) (equal value eof-value))
         ;; In this case, expected value is known to be the eof-value!
@@ -106,128 +113,200 @@
           :do (assert (eql (aref seq i) (aref expected-seq i))))))
 
 
+(defmacro do-test (stream-kind octet-read-buffer-size octet-vector-sym
+                   bitio-sym title-msg detail-msg &body body)
+  (let ((fiobuf (gensym)))
+    `(fast-io:with-fast-input (,fiobuf ,octet-vector-sym)
+       (format t "Test: [~A] ~A~%" , stream-kind ,title-msg)
+       (format t "  DESC: ~A~%" ,detail-msg)
+       (let ((,bitio-sym
+               (funcall (function ,(ecase stream-kind
+                                     (:fast-io 'test-make-bitio/fast-io)
+                                     (:clhs-io 'test-make-bitio/clhs)))
+                        ,fiobuf
+                        :octet-read-buffer-size ,octet-read-buffer-size)))
+         ,@body
+         ))))
 
 (defun doit ()
   (let ((octet-vector (make-octet-vector)))
     (format t "Test Octet vector: ~X~%" octet-vector)
-    (fast-io:with-fast-input (fiobuf octet-vector)
-      (format t "Case: read-bits, fast read path, bit-endian: :be~%")
-      (let ((bitio (test-make-bitio/fast-io fiobuf)))
-        (test-read-bits bitio 8 :be #x5C)
-        (test-read-bits bitio 16 :be #xF6EE)
-        (test-read-bits bitio 24 :be #x799ADE)
-        (test-read-bits bitio 32 :be #xFFF28802)
-        ))
 
-    (format t "Case: read-bits, fast read path, bit-endian: :le~%")
-    (fast-io:with-fast-input (fiobuf octet-vector)
-      (let ((bitio (test-make-bitio/fast-io fiobuf)))
-        (test-read-bits bitio 8 :le #x3A)
-        (test-read-bits bitio 16 :le #x6F77)
-        (test-read-bits bitio 24 :le #x9E597B)
-        (test-read-bits bitio 32 :le #xFF4F1140)
-        ))
+    ;; We test these functions:
+    ;; make-bitio, read-bits, read-one-byte, read-integer, read-bytes,
+    ;; octet-read-boundary-p
 
-    (format t "Case: read-bits, slow read path 1 bit, bit-endian: :be~%")
-    (fast-io:with-fast-input (fiobuf octet-vector)
-      (let ((bitio (test-make-bitio/fast-io fiobuf)))
-        ;; COnsume 1 octet
-        (test-read-bits bitio 1 :be #b0)
-        (test-read-bits bitio 1 :be #b1)
-        (test-read-bits bitio 1 :be #b0)
-        (test-read-bits bitio 1 :be #b1)
-        (test-read-bits bitio 1 :be #b1)
-        (test-read-bits bitio 1 :be #b1)
-        (test-read-bits bitio 1 :be #b0)
-        (test-read-bits bitio 1 :be #b0)
-        ))
+    (do-test :fast-io 4096 octet-vector bitio "READ-BITS"
+        "all aligned 1 octet reads, octet buffer larger, no eof, bit :be"
+      (test-read-bits bitio 8 :be #x5C)
+      (test-read-bits bitio 8 :be #xF6)
+      (test-read-bits bitio 8 :be #xEE)
+      (test-read-bits bitio 8 :be #x79))
 
-    (format t "Case: read-bits, slow read path 1 bit, bit-endian: :le~%")
-    (fast-io:with-fast-input (fiobuf octet-vector)
-      (let ((bitio (test-make-bitio/fast-io fiobuf)))
-        ;; Consume 1 octet
-        (test-read-bits bitio 1 :le #b0)
-        (test-read-bits bitio 1 :le #b0)
-        (test-read-bits bitio 1 :le #b1)
-        (test-read-bits bitio 1 :le #b1)
-        (test-read-bits bitio 1 :le #b1)
-        (test-read-bits bitio 1 :le #b0)
-        (test-read-bits bitio 1 :le #b1)
-        (test-read-bits bitio 1 :le #b0)
-        ))
+    (do-test :fast-io 1 octet-vector bitio "READ-BITS"
+        "all aligned 1 octet reads, octet buffer size 1, no eof, bit :be"
+      (test-read-bits bitio 8 :be #x5C)
+      (test-read-bits bitio 8 :be #xF6)
+      (test-read-bits bitio 8 :be #xEE)
+      (test-read-bits bitio 8 :be #x79))
 
-    (format t "Case: read-bits, slow read path 1 bit, bit-endian: both~%")
-    (fast-io:with-fast-input (fiobuf octet-vector)
-      (let ((bitio (test-make-bitio/fast-io fiobuf)))
-        ;; Consume 1 octet :le bits first, then :be of the remaining bits.
-        (test-read-bits bitio 1 :le #b0)
-        (test-read-bits bitio 1 :le #b0)
-        (test-read-bits bitio 1 :le #b1)
-        (test-read-bits bitio 1 :le #b1)
-        (test-read-bits bitio 1 :be #b0)
-        (test-read-bits bitio 1 :be #b1)
-        (test-read-bits bitio 1 :be #b0)
-        (test-read-bits bitio 1 :be #b1)
-        ))
+    (do-test :fast-io 4096 octet-vector bitio "READ-BITS"
+        "all aligned reads, octet buffer larger, no eof, bit :be"
+      (test-read-bits bitio 8 :be #x5C)
+      (test-read-bits bitio 16 :be #xF6EE)
+      (test-read-bits bitio 24 :be #x799ADE)
+      (test-read-bits bitio 32 :be #xFFF28802))
 
+    (do-test :fast-io 3 octet-vector bitio "READ-BITS"
+        "all aligned reads, octet buffer smaller, no eof, bit :be"
+      (test-read-bits bitio 8 :be #x5C)
+      (test-read-bits bitio 16 :be #xF6EE)
+      (test-read-bits bitio 24 :be #x799ADE)
+      (test-read-bits bitio 32 :be #xFFF28802))
 
-    (format t "Case: read-bits, slow read path no fast, bit-endian: :be~%")
-    (fast-io:with-fast-input (fiobuf octet-vector)
-      (let ((bitio (test-make-bitio/fast-io fiobuf)))
-        ;; Consume 1 octet
-        (test-read-bits bitio 4 :be #b0101)
-        (test-read-bits bitio 4 :be #b1100)
+    (do-test :fast-io 4096 octet-vector bitio "READ-BITS"
+        "all aligned reads, octet buffer larger, no eof, bit :le"
+      (test-read-bits bitio 8 :le #x3A)
+      (test-read-bits bitio 16 :le #x6F77)
+      (test-read-bits bitio 24 :le #x9E597B)
+      (test-read-bits bitio 32 :le #xFF4F1140))
 
-        ;; Consume 1 octet
-        (test-read-bits bitio 3 :be #b111)
-        (test-read-bits bitio 5 :be #b10110)
+    (do-test :fast-io 11 octet-vector bitio "READ-BITS"
+        "all aligned reads, octet buffer larger size, no eof, bit :be"
+      (test-read-bits bitio 80 :be #x5CF6EE799ADEFFF28802))
 
-        ;; Consume 1 octet
-        (test-read-bits bitio 2 :be #b11)
-        (test-read-bits bitio 6 :be #b101110)
+    (do-test :fast-io 10 octet-vector bitio "READ-BITS"
+        "all aligned reads, octet buffer same size, no eof, bit :be"
+      (test-read-bits bitio 80 :be #x5CF6EE799ADEFFF28802))
 
-        ;; Consume 1 octet
-        (test-read-bits bitio 1 :be #b0)
-        (test-read-bits bitio 7 :be #b1111001)
+    (do-test :fast-io 9 octet-vector bitio "READ-BITS"
+        "all aligned reads, octet buffer smaller size, no eof, bit :be"
+      (test-read-bits bitio 80 :be #x5CF6EE799ADEFFF28802))
 
-        ;; Consume 1 octet
-        (test-read-bits bitio 2 :be #b10)
-        (test-read-bits bitio 2 :be #b01)
-        (test-read-bits bitio 2 :be #b10)
-        (test-read-bits bitio 2 :be #b10)
+    (do-test :fast-io 1 octet-vector bitio "READ-BITS"
+        "all aligned reads, octet buffer size of 1, no eof, bit :be"
+      (test-read-bits bitio 80 :be #x5CF6EE799ADEFFF28802))
 
-        ;; Consume 3 octets in 2 reads
-        (test-read-bits bitio 12 :be #xdef)
-        (test-read-bits bitio 12 :be #xff2)
+    (do-test :fast-io 4096 octet-vector bitio "READ-BITS"
+        "all unaligned reads, octet buffer larger, no eof, bit :be"
+      (test-read-bits bitio 1 :be #b0)
+      (test-read-bits bitio 1 :be #b1)
+      (test-read-bits bitio 1 :be #b0)
+      (test-read-bits bitio 1 :be #b1)
+      (test-read-bits bitio 1 :be #b1)
+      (test-read-bits bitio 1 :be #b1)
+      (test-read-bits bitio 1 :be #b0)
+      (test-read-bits bitio 1 :be #b0))
 
-        ;; Consume 2 octets in non-symmetric read
-        (test-read-bits bitio 15 :be #b100010000000001)
-        (test-read-bits bitio 1 :be #b0)
-        ))
+    (do-test :fast-io 4096 octet-vector bitio "READ-BITS"
+        "all unaligned reads, octet buffer larger, no eof, bit :le"
+      ;; Consume 1 octet worth of information
+      (test-read-bits bitio 1 :le #b0)
+      (test-read-bits bitio 1 :le #b0)
+      (test-read-bits bitio 1 :le #b1)
+      (test-read-bits bitio 1 :le #b1)
+      (test-read-bits bitio 1 :le #b1)
+      (test-read-bits bitio 1 :le #b0)
+      (test-read-bits bitio 1 :le #b1)
+      (test-read-bits bitio 1 :le #b0))
 
-    (format t "Case: read-bits, slow read path with fast, bit-endian: :be~%")
-    (fast-io:with-fast-input (fiobuf octet-vector)
-      (let ((bitio (test-make-bitio/fast-io fiobuf)))
-        ;; Consume .5 octet
-        (test-read-bits bitio 4 :be #x5)
+    (do-test :fast-io 4096 octet-vector bitio "READ-BITS"
+        "all unaligned reads, octet buffer larger, no eof, bit :le/:be"
+      ;; Consume 1 octet :le bits first, then :be of the remaining bits.
+      (test-read-bits bitio 1 :le #b0)
+      (test-read-bits bitio 1 :le #b0)
+      (test-read-bits bitio 1 :le #b1)
+      (test-read-bits bitio 1 :le #b1)
+      (test-read-bits bitio 1 :be #b0)
+      (test-read-bits bitio 1 :be #b1)
+      (test-read-bits bitio 1 :be #b0)
+      (test-read-bits bitio 1 :be #b1))
 
-        ;; Consume .5 octet, 8 octets, .5 octet
-        (test-read-bits bitio 72 :be #xcf6ee799adefff2880)
+    (do-test :fast-io 4096 octet-vector bitio "READ-BITS"
+        "all unaligned reads, octet buffer larger, no eof, bit :be"
+      ;; Consume 1 octet
+      (test-read-bits bitio 4 :be #b0101)
+      (test-read-bits bitio 4 :be #b1100)
 
-        ;; Consume .5 octet
-        (test-read-bits bitio 4 :be #x2)
-        ))
+      ;; Consume 1 octet
+      (test-read-bits bitio 3 :be #b111)
+      (test-read-bits bitio 5 :be #b10110)
 
-    (format t "Case: read-bits, fast read path with eof, bit-endian: :be~%")
-    (fast-io:with-fast-input (fiobuf octet-vector)
-      (let ((bitio (test-make-bitio/fast-io fiobuf)))
-        ;; Consume 10 legal octets, and then one more (80 bits plus 8
-        ;; bits) resulting in EOF.  Expected value here is the
-        ;; expected truncated return.
-        (test-read-bits bitio 88 :be #x5cf6ee799adefff28802 80 NIL :eof)
-        ;; Here we blatently read an :eof again, so we expect to see an :eof
-        (test-read-bits bitio 80 :be :eof 0 NIL :eof)
-        ))
+      ;; Consume 1 octet
+      (test-read-bits bitio 2 :be #b11)
+      (test-read-bits bitio 6 :be #b101110)
+
+      ;; Consume 1 octet
+      (test-read-bits bitio 1 :be #b0)
+      (test-read-bits bitio 7 :be #b1111001)
+
+      ;; Consume 1 octet
+      (test-read-bits bitio 2 :be #b10)
+      (test-read-bits bitio 2 :be #b01)
+      (test-read-bits bitio 2 :be #b10)
+      (test-read-bits bitio 2 :be #b10)
+
+      ;; Consume 3 octets hopping boundaries
+      (test-read-bits bitio 4 :be #xd)
+      (test-read-bits bitio 8 :be #xef)
+      (test-read-bits bitio 8 :be #xff)
+      (test-read-bits bitio 4 :be #x2)
+
+      ;; Consume 2 octets hopping boundaries
+      (test-read-bits bitio 7 :be #b1000100)
+      (test-read-bits bitio 2 :be #b00)
+      (test-read-bits bitio 7 :be #b0000010))
+
+    (do-test :fast-io 4096 octet-vector bitio "READ-BITS"
+        "mixed w/inferred aligned read, octet buffer larger, no eof, bit :be"
+      ;; Consume .5 octet
+      (test-read-bits bitio 4 :be #x5)
+
+      ;; Consume .5 octet, 8 octets, .5 octet
+      ;; This infers a fast read of 8 octets in the middle of the 72 bits.
+      (test-read-bits bitio 72 :be #xcf6ee799adefff2880)
+
+      ;; Consume .5 octet
+      (test-read-bits bitio 4 :be #x2))
+
+    (do-test :fast-io 3 octet-vector bitio "READ-BITS"
+        "mixed w/inferred aligned read, octet buffer size 3, no eof, bit :be"
+      ;; Consume .5 octet
+      (test-read-bits bitio 4 :be #x5)
+
+      ;; Consume .5 octet, 8 octets, .5 octet
+      ;; This infers a fast read of 8 octets in the middle of the 72 bits.
+      (test-read-bits bitio 72 :be #xcf6ee799adefff2880)
+
+      ;; Consume .5 octet
+      (test-read-bits bitio 4 :be #x2))
+
+    (do-test :fast-io 4096 octet-vector bitio "READ-BITS"
+        "all aligned read, octet buffer size larger, eof, bit :be"
+      ;; Consume 10 legal octets, and then one more (80 bits plus 8
+      ;; bits) resulting in EOF.  Expected value here is the
+      ;; expected truncated return.
+      (test-read-bits bitio 88 :be #x5cf6ee799adefff28802 80 NIL :eof)
+      ;; Here we blatently read an :eof again, so we expect to see an :eof
+      (test-read-bits bitio 80 :be :eof 0 NIL :eof))
+
+    (do-test :fast-io 7 octet-vector bitio "READ-BITS"
+        "all aligned read, octet buffer size smaller, eof, bit :be"
+      ;; Consume 10 legal octets, and then one more (80 bits plus 8
+      ;; bits) resulting in EOF.  Expected value here is the
+      ;; expected truncated return.
+      (test-read-bits bitio 88 :be #x5cf6ee799adefff28802 80 NIL :eof)
+      ;; Here we blatently read an :eof again, so we expect to see an :eof
+      (test-read-bits bitio 80 :be :eof 0 NIL :eof))
+
+    (do-test :fast-io 1 octet-vector bitio "READ-BITS"
+        "all aligned read, octet buffer size 1, eof, bit :be"
+      ;; Consume 10 legal octets, and then one more (80 bits plus 8
+      ;; bits) resulting in EOF.  Expected value here is the
+      ;; expected truncated return.
+      (test-read-bits bitio 88 :be #x5cf6ee799adefff28802 80 NIL :eof)
+      ;; Here we blatently read an :eof again, so we expect to see an :eof
+      (test-read-bits bitio 80 :be :eof 0 NIL :eof))
 
     (format t "Case: read-bits, slow read path with eof, bit-endian: :be~%")
     (fast-io:with-fast-input (fiobuf octet-vector)
