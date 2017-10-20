@@ -62,6 +62,9 @@ position."
                                      (octet-stream bitio)
                                      :start 0 :end num-octets-to-read)))
 
+	   (when (> octets-read num-octets-to-read)
+	     (error "The underlying octet stream you gave to bitio has a bad implementation of its read-sequence analog. It returned that it read more octets than I asked it to. Fail."))
+
            ;; place the bit endian manipulated octets into the right place in
            ;; the value
            (loop :for i :below octets-read
