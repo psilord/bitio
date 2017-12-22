@@ -12,4 +12,16 @@
            #:read-integer
            #:octet-read-boundary-p))
 
+(uiop:define-package #:bitio.gray
+    (:use #:cl #:bitio #:fast-io)
+  (:mix #:uiop
+        #:trivial-gray-streams
+        #:cl-package-locks
+        #:checkl)
+  (:export :make-bitio-stream
+           :input-stream-p
+           :peek-byte
+           :stream-bit-endian
+           :stream-byte-endian))
+
 (in-package #:bitio)
