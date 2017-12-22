@@ -34,13 +34,13 @@
                          :reader %bitio/read-sequence)
    (%default-bit-endian :initarg :default-bit-endian
                         :initform :be
-                        :reader default-bit-endian)
+                        :accessor default-bit-endian)
    (%default-byte-endian :initarg :default-byte-endian
                          :initform :le
-                         :reader default-byte-endian)
+                         :accessor default-byte-endian)
    (%default-bits-per-byte :initarg :default-bits-per-byte
                            :initform 8
-                           :reader default-bits-per-byte)))
+                           :accessor default-bits-per-byte)))
 
 (defgeneric bitio/read-octet (bitio &optional eof-error-p eof-value)
   (:documentation "Read an octet from the funciton supplied with the stream
