@@ -9,9 +9,17 @@
   :license "MIT License"
 
   :serial t
-  :depends-on (#:fast-io)
-  :components ((:file "package")
-           (:file "utils")
-           (:file "bitio")
-           (:file "bitio-read")
-           (:file "tests")))
+  :depends-on (#:fast-io
+               #:trivial-gray-streams
+               #:cl-package-locks
+               #:checkl)
+  :components ((:module "base"
+                        :pathname ""
+                        :components ((:file "package")
+                                     (:file "utils")
+                                     (:file "bitio")
+                                     (:file "bitio-read")
+                                     (:file "tests")))
+               (:module "contrib"
+                        :components ((:file "gray")
+                                     (:file "gray-test")))))
