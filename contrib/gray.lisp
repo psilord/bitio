@@ -7,11 +7,6 @@
 
 (defclass bitio-input-stream (bitio-stream fundamental-input-stream) ())
 
-;; (defmethod ms:class-persistent-slots ((self bitio-input-stream))
-;;   '(bitio::%default-bits-per-byte bitio::%read-bit-stable
-;;     bitio::%bitio/read-octet bitio::%bitio/read-sequence bitio::%default-bit-endian
-;;     bitio::%default-byte-endian bitio::%default-bits-per-byte))
-
 (defun make-bitio-stream (octet-stream bitio/read-octet bitio/read-sequence
                           &key (bit-endian :be) (byte-endian :le) (bits-per-byte 8)
                             (octet-read-buffer-size 4096))
